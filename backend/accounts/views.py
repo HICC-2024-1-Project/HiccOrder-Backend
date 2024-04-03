@@ -1,5 +1,7 @@
 import jwt
 from rest_framework.views import APIView
+from rest_framework_simplejwt.views import TokenRefreshView
+
 from .serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework import status
