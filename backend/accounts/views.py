@@ -122,3 +122,20 @@ class AuthAPIView(APIView):
         response.delete_cookie("access")
         response.delete_cookie("refresh")
         return response
+
+
+class EmailDuplication(APIView):
+    # 이메일 중복 확인
+    def post(self, request):
+        email = request.data.get('email')
+
+        if not email:
+            return Response(status=status.HTTP_400_BAD_REQUEST)
+
+        # 이메일을 가진 사용자 수를 확인
+        user_count = User.objects.filter(email=email).count()
+
+        if user_count >= 1:
+            return Response(status=status.HTTP_200_OK)
+        else:
+            return Response(status=status.HTTP_404_NOT_FOUND)
