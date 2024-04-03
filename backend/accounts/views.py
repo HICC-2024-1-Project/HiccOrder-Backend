@@ -4,12 +4,13 @@ from .serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework import status
 from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from django.shortcuts import render, get_object_or_404
 from backend.settings import SECRET_KEY
 
 
-class SignUpAPIView(APIView):
+class SignAPIView(APIView):
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -37,6 +38,15 @@ class SignUpAPIView(APIView):
 
             return res
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def delete(self, request):
+        permission_classes = [IsAuthenticated]
+        user = request.user
+        if user.is_authenticated:  # 인증된 사용자인 경우에만 삭제 작업 수행
+            user.delete()
+            return Response({"message": "User deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"error": "User is not authenticated"}, status=status.HTTP_401_UNAUTHORIZED)
 
 
 class AuthAPIView(APIView):
