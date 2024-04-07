@@ -1,9 +1,7 @@
 import jwt
-from django.http import JsonResponse
 from rest_framework.views import APIView
-from rest_framework_simplejwt.views import TokenRefreshView
 
-from .serializers import *
+from ..serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework import status
 from rest_framework.response import Response
@@ -142,27 +140,3 @@ class EmailDuplication(APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
-
-
-class BoothAPIView(APIView):
-    def patch(self, request, booth_id):     # 부스 정보 추가 및 수정
-        # try:
-        #     access_token = request.headers.get('Authorization', None)
-        #     payload = jwt.decode(access_token, SECRET_KEY, algorithm='HS256')
-        #     booth_id = User.objects.get(email=payload['email'])
-        # except jwt.exceptions.DecodeError:
-        #     return JsonResponse({'message': 'INVALID_TOKEN'}, status=400)
-        # except User.DoesNotExist:
-        #     return JsonResponse({'message': 'INVALID_USER'}, status=400)
-        try:
-            instance = User.objects.get(pk=booth_id)
-
-        except User.DoesNotExist:
-            return Response(status=status.HTTP_404_NOT_FOUND)
-        serializer = UserSerializer(instance, data=request.data, partial=True)
-
-        if not serializer.is_valid():
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
-        serializer.save(instance=instance)
-        return Response({"message": "User updated successfully"}, status=status.HTTP_204_NO_CONTENT)
