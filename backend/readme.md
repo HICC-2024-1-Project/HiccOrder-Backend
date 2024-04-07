@@ -36,6 +36,11 @@ urlpatterns = [
 ```
 
 ## view 구성
+### 파일 구조
+- views/__init__에 사용할 코드 등록
+- views/파일명.py 형태로 기능별로 구분
+- 좀 더 세부적으로 구분이 필요한 경우 views/패키지명(폴더)/__init__, views/패키지명(폴더)/파일명.py로 구성
+### view.py 구성
 - DRF view 구성에는 크게 [2가지 방식](https://velog.io/@qlgks1/Django-DRF-FBVFunction-Based-Views-vs-CBVClass-Based-Views)이 있습니다.
 - 저희는 클래스형을 사용할 예정입니다.
   - 함수형(Function Based View)
