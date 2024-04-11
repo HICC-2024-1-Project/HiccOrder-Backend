@@ -41,6 +41,12 @@ class BoothAPIView(APIView):
 class BoothMenuAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
+    def get(self, request, booth_id):
+        user = get_object_or_404(User, email=booth_id)
+        booth_menu_items = BoothMenu.objects.filter(email=user)
+        serializer = BoothMenuSerializer(instance=booth_menu_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def patch(self, request, booth_id):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
