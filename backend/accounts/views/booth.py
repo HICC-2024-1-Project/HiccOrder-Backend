@@ -58,3 +58,11 @@ class BoothMenuAPIView(APIView):
         else:
             return Response({"message": "권한이 없습니다. 자신의 뷰수 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class BoothMenuDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+
+    def get(self, request, booth_id, menu_id):
+        booth_menu = get_object_or_404(BoothMenu, pk=menu_id)
+        serializer = BoothMenuSerializer(instance=booth_menu)
+        return Response(serializer.data, status=status.HTTP_200_OK)
