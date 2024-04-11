@@ -50,3 +50,32 @@ class User(AbstractBaseUser, PermissionsMixin):
 
     class Meta:
         db_table = 'user'
+
+
+class BoothMenuManager(models.Manager):
+    use_in_migrations = True
+
+    def create_booth_menu(self, email, category, menu_name, price, description):
+        booth_menu = self.model(
+            email=email,
+            category=category,
+            menu_name=menu_name,
+            description=description,
+            price=price,
+        )
+        booth_menu.save(using=self._db)
+        return booth_menu
+
+
+class BoothMenu(models.Model):
+    email = models.ForeignKey(User, related_name='booth_menu', on_delete=models.PROTECT)
+    category = models.CharField(max_length=10, default=None, null=True)
+    menu_name = models.CharField(max_length=20, blank=False)
+    description = models.CharField(max_length=100, null=True, blank=True)
+    price = models.IntegerField(default=0, null=False, blank=False)
+    menu_image_url = models.URLField(max_length=255, null=True, blank=True)
+
+    objects = BoothMenuManager()
+
+    class Meta:
+        db_table = 'booth_menu'
