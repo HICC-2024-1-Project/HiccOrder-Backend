@@ -1,14 +1,14 @@
 import jwt
 from rest_framework.views import APIView
 
-from ..serializers import *
+from ..serializers import *     # model도 포함
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
 
-from .common import get_fields
+from .common import get_fields, check_authority
 
 
 class BoothAPIView(APIView):
@@ -56,7 +56,6 @@ class BoothMenuAPIView(APIView):
         if user == instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
             serializer = BoothMenuSerializer(data=dict({'email': booth_id}, **request.data))
             if serializer.is_valid(raise_exception=True):
-                # serializer.create(dict({'email': booth_id}, **request.data))
                 serializer.create(dict({'email': instance}, **request.data))
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
@@ -74,14 +73,9 @@ class BoothMenuDetailAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, booth_id, menu_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
-        user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
-
-        user_instance = get_object_or_404(User, pk=booth_id)
-        if user == user_instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
+        if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
             booth_menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
-            serializer = BoothMenuSerializer(booth_menu_instance, data=request.data, partial=True)
+            serializer = BoothMenuSerializer(instance=booth_menu_instance, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(instance=booth_menu_instance)
                 return Response(status=status.HTTP_204_NO_CONTENT)
