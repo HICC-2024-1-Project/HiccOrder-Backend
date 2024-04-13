@@ -35,6 +35,19 @@ class BoothMenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = BoothMenu
         fields = '__all__'
+        strict = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 들어온 데이터의 필드 목록
+        incoming_fields = set(self.initial_data.keys())
+        # Serializer에 정의된 필드 목록
+        defined_fields = set(self.fields.keys())
+
+        # Serializer에 정의되지 않은 필드 확인
+        undefined_fields = incoming_fields - defined_fields
+        if undefined_fields:
+            raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
 
     def create(self, validated_data):
         booth_menu = BoothMenu.objects.create_booth_menu(
