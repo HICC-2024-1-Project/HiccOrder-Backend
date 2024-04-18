@@ -83,4 +83,11 @@ class BoothMenuDetailAPIView(APIView):
                 Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "권한이 없습니다. 자신의 부스 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        
+
+    def delete(self, request, booth_id, menu_id):
+        if check_authority(request, booth_id):
+            model = BoothMenu.objects.get(id=menu_id)
+            model.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": "권한이 없습니다. 자신의 부스 메뉴만 삭제할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
