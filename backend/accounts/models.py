@@ -1,6 +1,4 @@
 from django.db import models
-
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 
@@ -79,3 +77,25 @@ class BoothMenu(models.Model):
 
     class Meta:
         db_table = 'booth_menu'
+
+
+class TableManager(models.Manager):
+    use_in_migrations = True
+
+    def create_table(self, email, table_name):
+        table = self.model(
+            email=email,
+            table_name=table_name,
+        )
+        table.save(using=self._db)
+        return table
+
+
+class Table(models.Model):
+    email = models.ForeignKey(User, related_name='table', on_delete=models.PROTECT)
+    table_name = models.CharField(max_length=10, default=None, null=True)
+
+    objects = TableManager()
+
+    class Meta:
+        db_table = 'table'
