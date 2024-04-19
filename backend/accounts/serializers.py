@@ -85,3 +85,11 @@ class TableSerializer(serializers.ModelSerializer):
             table_name=validated_data['table_name']
         )
         return table
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            'id': data['id'],
+            'table_name': data['table_name'],
+            # 필요한 필드만 선택하여 반환
+        }
