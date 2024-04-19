@@ -9,4 +9,5 @@ __all__ = [
     'BoothAPIView',
     'BoothMenuAPIView',
     'TableAPIView',
+    'TableDetailAPIVIew'
 ]

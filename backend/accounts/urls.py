@@ -1,7 +1,7 @@
 from django.urls import path
 
 from .views import SignAPIView, AuthAPIView, EmailDuplication, BoothAPIView, BoothMenuAPIView, BoothMenuDetailAPIView, \
-    TableAPIView
+    TableAPIView, TableDetailAPIVIew
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -14,4 +14,5 @@ urlpatterns = [
     path("booth/<str:booth_id>/menu/", BoothMenuAPIView.as_view()),
     path("booth/<str:booth_id>/menu/<str:menu_id>/", BoothMenuDetailAPIView.as_view()),
     path("booth/<str:booth_id>/table/", TableAPIView.as_view()),
+    path("booth/<str:booth_id>/table/<str:table_id>/", TableDetailAPIVIew.as_view()),
 ]
