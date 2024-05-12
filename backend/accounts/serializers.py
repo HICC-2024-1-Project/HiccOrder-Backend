@@ -1,4 +1,4 @@
-from .models import User, BoothMenu, Table
+from .models import User, BoothMenu, Table, Order #Order 추가함
 from rest_framework import serializers
 
 
@@ -93,3 +93,35 @@ class TableSerializer(serializers.ModelSerializer):
             'table_name': data['table_name'],
             # 필요한 필드만 선택하여 반환
         }
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Order
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            # 들어온 데이터의 필드 목록
+            incoming_fields = set(self.initial_data.keys())
+            # Serializer에 정의된 필드 목록
+            defined_fields = set(self.fields.keys())
+
+            # Serializer에 정의되지 않은 필드 확인
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            'table_id': data['table_id'],
+            'order_id': data['order_id'],
+            'id': data['email'],
+            'menu_id': data['menu_id'],
+            'timestamp': data['timestamp'],
+            'quantity': data['quantity'],
+            'state': data['state']
+        }
+
