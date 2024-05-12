@@ -16,6 +16,8 @@ from django.core.exceptions import ImproperlyConfigured
 
 from datetime import timedelta  # library for simple jwt
 
+from dotenv import load_dotenv  # library for loading .env
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -210,3 +212,6 @@ ACCOUNT_AUTHENTICATION_METHOD = 'email'
 ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
+
+# .env 파일 로드
+load_dotenv()
