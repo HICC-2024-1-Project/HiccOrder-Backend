@@ -1,6 +1,6 @@
 from django.urls import path
 
-from .views import SignAPIView, AuthAPIView, EmailDuplication, BoothAPIView, BoothMenuAPIView
+from .views import *
 
 from rest_framework_simplejwt.views import TokenRefreshView
 
@@ -10,5 +10,8 @@ urlpatterns = [
     path("auth/duplicate/", EmailDuplication.as_view()),  # post-이메일 중복 확인
     path("auth/refresh/", TokenRefreshView.as_view(), name='token_refresh'),     # post-refresh token 재발급
     path("booth/<str:booth_id>/", BoothAPIView.as_view()),
-    path("booth/<str:booth_id>/menu/", BoothMenuAPIView.as_view())
+    path("booth/<str:booth_id>/menu/", BoothMenuAPIView.as_view()),
+    path("auth/google/login/", google_login, name='google_login'),
+    path("auth/google/callback/", google_callback, name='google_callback'),
+    path("auth/google/login/finish/", GoogleLogin.as_view(), name='google_login_finish'),
 ]

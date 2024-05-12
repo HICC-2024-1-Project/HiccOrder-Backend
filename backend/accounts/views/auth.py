@@ -3,12 +3,14 @@ from rest_framework.views import APIView
 
 from ..serializers import *
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from backend.settings import SECRET_KEY
+
+from rest_framework import status
+from ..models import *
 
 
 class SignAPIView(APIView):
