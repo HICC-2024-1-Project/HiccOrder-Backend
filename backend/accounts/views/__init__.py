@@ -9,6 +9,5 @@ __all__ = [
     'BoothAPIView',
     'BoothMenuAPIView',
     'google_login',
-    'google_callback',
-    'GoogleLogin',
+    'GoogleCallbackAPIView',
 ]

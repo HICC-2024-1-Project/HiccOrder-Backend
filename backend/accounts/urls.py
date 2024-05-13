@@ -12,6 +12,5 @@ urlpatterns = [
     path("booth/<str:booth_id>/", BoothAPIView.as_view()),
     path("booth/<str:booth_id>/menu/", BoothMenuAPIView.as_view()),
     path("auth/google/login/", google_login, name='google_login'),
-    path("auth/google/callback/", google_callback, name='google_callback'),
-    path("auth/google/login/finish/", GoogleLogin.as_view(), name='google_login_finish'),
+    path("auth/google/callback/", GoogleCallbackAPIView.as_view(), name='google_callback'),
 ]

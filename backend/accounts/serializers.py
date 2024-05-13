@@ -25,6 +25,17 @@ class UserSerializer(serializers.ModelSerializer):
         return instance
 
 
+class UserSerializerWithNoPassword(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        exclude = ('password',)
+
+    def create(self, validated_data):
+        # create_user 대신에 create 메서드를 사용합니다.
+        user = User.objects.create(**validated_data)
+        return user
+
+
 class BoothSerializer(serializers.ModelSerializer):
     class Meta:
         model = User

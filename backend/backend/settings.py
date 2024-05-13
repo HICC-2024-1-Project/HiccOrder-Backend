@@ -15,8 +15,7 @@ import json
 from django.core.exceptions import ImproperlyConfigured
 
 from datetime import timedelta  # library for simple jwt
-
-from dotenv import load_dotenv  # library for loading .env
+from dotenv import load_dotenv  # library for loading env file
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -43,6 +42,9 @@ def get_secret(setting, secret=secrets):
 
 SECRET_KEY = get_secret("SECRET_KEY")
 
+# .env 파일 로드
+load_dotenv()
+
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
@@ -67,7 +69,6 @@ INSTALLED_APPS = [
 
     'allauth',
     'allauth.account',
-    'allauth.socialaccount',
     'allauth.socialaccount.providers.google',
     # app 추가
     'accounts',
@@ -213,5 +214,4 @@ ACCOUNT_EMAIL_REQUIRED = True
 ACCOUNT_USER_MODEL_USERNAME_FIELD = None
 ACCOUNT_USERNAME_REQUIRED = False
 
-# .env 파일 로드
-load_dotenv()
+
