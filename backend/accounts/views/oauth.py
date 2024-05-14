@@ -85,7 +85,7 @@ class GoogleCallbackAPIView(APIView):
             return response
         else:
             # 새로운 회원 가입을 진행합니다.
-            data = {"email": email, "password": ''}
+            data = {"email": email, "password": '', "is_oauth": True}
             serializer = UserSerializerWithNoPassword(data=data)
             if serializer.is_valid():
                 user = serializer.save()
