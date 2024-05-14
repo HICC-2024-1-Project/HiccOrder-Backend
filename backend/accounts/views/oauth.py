@@ -62,7 +62,10 @@ class GoogleCallbackAPIView(APIView):
 
         #################################################################
 
-        user = User.objects.get(email=email)
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            user = None
         if user is not None and user.is_oauth:
             # 이미 회원이 존재하는 경우, 로그인을 수행하고 토큰을 발급합니다.
             token = TokenObtainPairSerializer.get_token(user)
