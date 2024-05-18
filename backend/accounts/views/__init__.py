@@ -1,6 +1,7 @@
 from .auth import *
 from .booth import *
 from .oauth import *
+from .email import *
 
 __all__ = [
     'SignAPIView',
@@ -10,4 +11,5 @@ __all__ = [
     'BoothMenuAPIView',
     'google_login',
     'GoogleCallbackAPIView',
+    'SendVerificationCodeView',
 ]
