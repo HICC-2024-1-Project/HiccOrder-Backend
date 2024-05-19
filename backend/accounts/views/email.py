@@ -37,6 +37,13 @@ class SendVerificationCodeView(APIView):
         if not email:
             return Response({'error': 'Email is required'}, status=status.HTTP_400_BAD_REQUEST)
 
+        try:
+            user = User.objects.get(email=email)
+        except User.DoesNotExist:
+            return Response({'error': 'User with this email does not exist'}, status=status.HTTP_404_NOT_FOUND)
+
+        if user.is_oauth:
+            return Response({'error': 'User with this email is an easy login user'}, status=status.HTTP_404_NOT_FOUND)
         verification_code = generate_verification_code()
         # Save the verification code in the cache with a timeout (5 minutes)
         cache.set(email, verification_code, timeout=300)
