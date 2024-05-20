@@ -13,4 +13,6 @@ __all__ = [
     'GoogleCallbackAPIView',
     'SendVerificationCodeView',
     'VerifyCodeView',
+    'GenerateTemporaryLinkAPIView',
+    'TemporaryResourceAPIView',
 ]

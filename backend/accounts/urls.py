@@ -14,5 +14,7 @@ urlpatterns = [
     path("auth/google/login/", google_login, name='google_login'),
     path("auth/google/callback/", GoogleCallbackAPIView.as_view(), name='google_callback'),
     path("auth/password/", SendVerificationCodeView.as_view()),
-    path('auth/password/verify/', VerifyCodeView.as_view()),
+    path("auth/password/verify/", VerifyCodeView.as_view()),
+    path("auth/qrlink/", GenerateTemporaryLinkAPIView.as_view()),
+    path("auth/qrsignin/<str:token>/", TemporaryResourceAPIView.as_view())
 ]
