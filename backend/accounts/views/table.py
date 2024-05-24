@@ -32,6 +32,13 @@ class TableAPIView(APIView):
 
 
 class TableDetailAPIVIew(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, booth_id, table_id):
+        table_instance = get_object_or_404(Table, pk=table_id)
+        serializer = TableSerializer(instance=table_instance)
+        return Response(serializer.data, status = status.HTTP_200_OK)
+
     def patch(self, request, booth_id, table_id):
         if check_authority(request, booth_id):
             table_instance = get_object_or_404(Table, pk=table_id)
@@ -43,3 +50,12 @@ class TableDetailAPIVIew(APIView):
                 Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "권한이 없습니다. 본인 부스의 테이블 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def delete(self, request, booth_id, table_id):
+        if check_authority(request, booth_id):
+            if Table.objects.count() == 1 :
+                return Response({"message": "테이블은 1개 이상 있어야 합니다"}, status = status.HTTP_409_CONFLICT)
+            else :
+                table_delete_instance = Table.objects.get(id = table_id)
+                table_delete_instance.delete()
+                return Response(status = status.HTTP_204_NO_CONTENT)
