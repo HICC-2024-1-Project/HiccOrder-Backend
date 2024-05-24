@@ -59,3 +59,5 @@ class TableDetailAPIVIew(APIView):
                 table_delete_instance = Table.objects.get(id = table_id)
                 table_delete_instance.delete()
                 return Response(status = status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": "권한이 없습니다. 본인 부스의 테이블만 삭제할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
