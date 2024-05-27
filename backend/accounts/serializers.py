@@ -1,4 +1,4 @@
-from .models import User, BoothMenu
+from .models import User, BoothMenu, Table
 from rest_framework import serializers
 
 
@@ -46,9 +46,22 @@ class BoothMenuSerializer(serializers.ModelSerializer):
     class Meta:
         model = BoothMenu
         fields = '__all__'
+        strict = True
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            # 들어온 데이터의 필드 목록
+            incoming_fields = set(self.initial_data.keys())
+            # Serializer에 정의된 필드 목록
+            defined_fields = set(self.fields.keys())
+
+            # Serializer에 정의되지 않은 필드 확인
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
 
     def create(self, validated_data):
-        print(validated_data)
         booth_menu = BoothMenu.objects.create_booth_menu(
             email=validated_data['email'],
             category=validated_data['category'],
@@ -57,3 +70,37 @@ class BoothMenuSerializer(serializers.ModelSerializer):
             description=validated_data['description'],
         )
         return booth_menu
+
+
+class TableSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Table
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            # 들어온 데이터의 필드 목록
+            incoming_fields = set(self.initial_data.keys())
+            # Serializer에 정의된 필드 목록
+            defined_fields = set(self.fields.keys())
+
+            # Serializer에 정의되지 않은 필드 확인
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
+
+    def create(self, validated_data):
+        table = Table.objects.create_table(
+            email=validated_data['email'],
+            table_name=validated_data['table_name']
+        )
+        return table
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            'id': data['id'],
+            'table_name': data['table_name'],
+            # 필요한 필드만 선택하여 반환
+        }

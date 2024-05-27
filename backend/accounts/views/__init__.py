@@ -1,18 +1,21 @@
 from .auth import *
-from .booth import *
 from .oauth import *
 from .email import *
+from .table import *
+from .booth import *
 
 __all__ = [
     'SignAPIView',
     'AuthAPIView',
     'EmailDuplication',
-    'BoothAPIView',
-    'BoothMenuAPIView',
     'google_login',
     'GoogleCallbackAPIView',
     'SendVerificationCodeView',
     'VerifyCodeView',
     'GenerateTemporaryLinkAPIView',
     'TemporaryResourceAPIView',
+    'BoothAPIView',
+    'BoothMenuAPIView',
+    'TableAPIView',
+    'TableDetailAPIVIew'
 ]

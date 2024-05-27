@@ -1,5 +1,12 @@
+import jwt
+
+from accounts.models import User
+from backend.settings import SECRET_KEY
+from django.shortcuts import get_object_or_404
+
+
 def get_fields(model, field_list):
-    """serializer로 얻은 값에서 특정 field만 반환해주는 함수이빈다.
+    """serializer로 얻은 값에서 특정 field만 반환해주는 함수이다.
 
     Args:
         model: serializer를 통해 얻은 인스턴스 값(단일 혹은 다중값 상관없이 전부 가능).
@@ -28,3 +35,14 @@ def get_fields(model, field_list):
         data = single_data
 
     return data
+
+
+def check_authority(request, booth_id):
+    access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
+    payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
+    user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
+    user_instance = get_object_or_404(User, pk=booth_id)
+    if user == user_instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
+        return True
+    else:
+        return False

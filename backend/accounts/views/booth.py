@@ -1,14 +1,14 @@
 import jwt
 from rest_framework.views import APIView
 
-from ..serializers import *
+from ..serializers import *     # model도 포함
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
 
-from .common import get_fields
+from .common import get_fields, check_authority
 
 
 class BoothAPIView(APIView):
@@ -41,6 +41,12 @@ class BoothAPIView(APIView):
 class BoothMenuAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
+    def get(self, request, booth_id):
+        user = get_object_or_404(User, email=booth_id)
+        booth_menu_items = BoothMenu.objects.filter(email=user)
+        serializer = BoothMenuSerializer(instance=booth_menu_items, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
     def patch(self, request, booth_id):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
@@ -50,11 +56,38 @@ class BoothMenuAPIView(APIView):
         if user == instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
             serializer = BoothMenuSerializer(data=dict({'email': booth_id}, **request.data))
             if serializer.is_valid(raise_exception=True):
-                # serializer.create(dict({'email': booth_id}, **request.data))
                 serializer.create(dict({'email': instance}, **request.data))
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
                 Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return Response({"message": "권한이 없습니다. 자신의 뷰수 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({"message": "권한이 없습니다. 자신의 부스 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class BoothMenuDetailAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+
+    def get(self, request, booth_id, menu_id):
+        booth_menu = get_object_or_404(BoothMenu, pk=menu_id)
+        serializer = BoothMenuSerializer(instance=booth_menu)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def patch(self, request, booth_id, menu_id):
+        if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
+            booth_menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+            serializer = BoothMenuSerializer(instance=booth_menu_instance, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(instance=booth_menu_instance)
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return Response({"message": "권한이 없습니다. 자신의 부스 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+    def delete(self, request, booth_id, menu_id):
+        if check_authority(request, booth_id):
+            model = BoothMenu.objects.get(id=menu_id)
+            model.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        else:
+            return Response({"message": "권한이 없습니다. 자신의 부스 메뉴만 삭제할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)

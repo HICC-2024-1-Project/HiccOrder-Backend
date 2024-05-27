@@ -1,6 +1,4 @@
 from django.db import models
-
-from django.db import models
 from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 
 
@@ -79,3 +77,55 @@ class BoothMenu(models.Model):
 
     class Meta:
         db_table = 'booth_menu'
+
+
+class TableManager(models.Manager):
+    use_in_migrations = True
+
+    def create_table(self, email, table_name):
+        table = self.model(
+            email=email,
+            table_name=table_name,
+        )
+        table.save(using=self._db)
+        return table
+
+
+class Table(models.Model):
+    email = models.ForeignKey(User, related_name='table', on_delete=models.PROTECT)
+    table_name = models.CharField(max_length=10, default=None, null=True)
+
+    objects = TableManager()
+
+    class Meta:
+        db_table = 'table'
+
+
+class OrderManager(models.Manager):
+    use_in_migrations = True
+
+    def create_order(self, table_id, email, menu_id, timestamp, quantity, state):
+        order = self.model(
+            table_id=table_id,
+            email=email,
+            menu_id=menu_id,
+            timestamp=timestamp,
+            quantity=quantity,
+            state=state,
+        )
+        order.save(using=self._db)
+        return order
+
+
+class Order(models.Model):
+    table_id = models.ForeignKey(Table, related_name='order', on_delete=models.PROTECT)
+    email = models.ForeignKey(User, related_name='order', on_delete=models.PROTECT)
+    menu_id = models.ForeignKey(BoothMenu, related_name='order', on_delete=models.PROTECT)
+    timestamp = models.DateTimeField(primary_key=True, null=False, blank=False)
+    quantity = models.PositiveIntegerField(max_length=1000, null=False, blank=False)
+    state = models.CharField(max_length=10, null=False, blank=False)
+
+    objects = OrderManager()
+
+    class Meta:
+        db_table = 'order'
