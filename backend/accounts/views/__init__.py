@@ -16,6 +16,7 @@ __all__ = [
     'TemporaryResourceAPIView',
     'BoothAPIView',
     'BoothMenuAPIView',
+    'BoothMenuDetailAPIView',
     'TableAPIView',
     'TableDetailAPIVIew'
 ]

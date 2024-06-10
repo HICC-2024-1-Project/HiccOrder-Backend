@@ -16,7 +16,7 @@ urlpatterns = [
     path("auth/password/", SendVerificationCodeView.as_view()),
     path("auth/password/verify/", VerifyCodeView.as_view()),
     path("auth/qrlink/", GenerateTemporaryLinkAPIView.as_view()),
-    path("auth/qrsignin/<str:token>/", TemporaryResourceAPIView.as_view())
+    path("auth/qrsignin/<str:token>/", TemporaryResourceAPIView.as_view()),
     path("booth/<str:booth_id>/menu/<str:menu_id>/", BoothMenuDetailAPIView.as_view()),
     path("booth/<str:booth_id>/table/", TableAPIView.as_view()),
     path("booth/<str:booth_id>/table/<str:table_id>/", TableDetailAPIVIew.as_view()),
