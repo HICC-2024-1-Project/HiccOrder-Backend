@@ -35,7 +35,7 @@ class User(AbstractBaseUser, PermissionsMixin):
     is_staff = models.BooleanField(default=False)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    is_oath = models.BooleanField(default=False)
+    is_oauth = models.BooleanField(default=False)
     booth_name = models.CharField(max_length=15, default=None, null=True)
     bank_name = models.CharField(max_length=30, default=None, null=True)
     banker_name = models.CharField(max_length=5, default=None, null=True)

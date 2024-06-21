@@ -8,6 +8,10 @@
 - python: 3.8 이상
 - django
 - rest_framework_simplejwt
+- django_allauth
+- dj_rest_auth
+- requests
+- python-dotenv
 
 ## app 구성
 - api 단위에 맞게 app 구성
