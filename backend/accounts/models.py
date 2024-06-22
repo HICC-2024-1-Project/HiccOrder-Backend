@@ -122,7 +122,7 @@ class Order(models.Model):
     email = models.ForeignKey(User, related_name='order', on_delete=models.PROTECT)
     menu_id = models.ForeignKey(BoothMenu, related_name='order', on_delete=models.PROTECT)
     timestamp = models.DateTimeField(primary_key=True, null=False, blank=False)
-    quantity = models.PositiveIntegerField(max_length=1000, null=False, blank=False)
+    quantity = models.PositiveIntegerField( null=False, blank=False)
     state = models.CharField(max_length=10, null=False, blank=False)
 
     objects = OrderManager()
