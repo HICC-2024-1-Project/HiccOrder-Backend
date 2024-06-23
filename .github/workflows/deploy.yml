@@ -28,17 +28,15 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: create-json
-        id: create-json
-        uses: jsdaniell/create-json@1.1.2
-        with:
-          name: "secrets.json"
-          json: ${{ secrets.SECRRT_JSON }}
-
       - name: Run Tests
+        env:
+          SECRET_JSON: ${{ secrets.SECRET_JSON }}
         run: |
           cd ./backend
+          echo "$SECRET_JSON" > secrets.json
           python manage.py test
+          rm secrets.json
+
   cd:
     name: "Django CD"
     needs: ci
@@ -59,5 +57,5 @@ jobs:
             git pull
             python manage.py makemigrations
             python manage.py migrate
-            sudo systemctl restart gunicorn  # Gunicorn 서비스를 재시작하여 변경 사항 반영
+            sudo systemctl restart gunicorn
             exit 0
