@@ -17,10 +17,6 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      # Move into the 'backend' directory
-      - name: Move to backend directory
-        run: cd ./backend
-
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v2
         with:
@@ -28,6 +24,7 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          cd ./backend
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
@@ -56,7 +53,7 @@ jobs:
           script: |
             sudo apt-get update
             sudo apt-get -y upgrade
-            cd /home/ubuntu/hiccOrder/HiccOrder-Backend/
+            cd /home/ubuntu/hiccOrder/HiccOrder-Backend/backend
             source /home/ubuntu/hiccOrderBackbin/activate
             git pull
             python manage.py makemigrations
