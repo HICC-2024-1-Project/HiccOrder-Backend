@@ -37,6 +37,7 @@ jobs:
 
       - name: Run Tests
         run: |
+          cd ./backend
           python manage.py test
   cd:
     name: "Django CD"
