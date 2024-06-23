@@ -30,10 +30,10 @@ jobs:
 
       - name: Run Tests
         env:
-          SECRET_JSON: ${{ secrets.SECRET_JSON }}
+          SECRET_KEY: ${{ secrets.SECRET_KEY }}
         run: |
           cd ./backend
-          echo "$SECRET_JSON" > secrets.json
+          echo "$SECRET_KEY" > secrets.json
           python manage.py test
           rm secrets.json
 
