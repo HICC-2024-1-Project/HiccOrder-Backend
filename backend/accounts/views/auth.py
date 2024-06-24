@@ -1,7 +1,10 @@
+import datetime
+
 import jwt
 import time
 
 from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
@@ -209,3 +212,34 @@ class TemporaryResourceAPIView(APIView):
 
         # 리소스에 접근하는 로직 추가
         return response
+
+
+class RefreshView(APIView):
+    # 토큰 재발급
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response({"error": "Refresh token is missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {"refresh": refresh_token}
+        serializer = TokenRefreshSerializer(data=data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            token = serializer.validated_data
+            now = datetime.datetime.now().isoformat()
+            res = Response(
+                {
+                    "timestamp": now,
+                    "token": {
+                        "access": token['access']
+                    },
+                    "success": "true"
+                },
+                status=status.HTTP_200_OK
+            )
+            return res
+        except TokenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidToken as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
