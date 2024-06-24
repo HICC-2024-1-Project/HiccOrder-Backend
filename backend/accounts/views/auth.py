@@ -213,6 +213,7 @@ class TemporaryResourceAPIView(APIView):
         # 리소스에 접근하는 로직 추가
         return response
 
+
 class RefreshView(APIView):
     # 토큰 재발급
     def post(self, request):
@@ -237,7 +238,6 @@ class RefreshView(APIView):
                 },
                 status=status.HTTP_200_OK
             )
-            res.set_cookie('access', token['access'], httponly=True)
             return res
         except TokenError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
