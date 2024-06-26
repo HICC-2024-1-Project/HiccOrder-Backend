@@ -53,10 +53,10 @@ class TableDetailAPIVIew(APIView):
 
     def delete(self, request, booth_id, table_id):
         if check_authority(request, booth_id):
-            if Table.objects.count() == 1 :
+            if Table.objects.count() <= 1 :
                 return Response({"message": "테이블은 1개 이상 있어야 합니다"}, status = status.HTTP_409_CONFLICT)
             else :
-                table_delete_instance = Table.objects.get(id = table_id)
+                table_delete_instance = get_object_or_404(Table, pk=table_id)
                 table_delete_instance.delete()
                 return Response(status = status.HTTP_204_NO_CONTENT)
         else:
