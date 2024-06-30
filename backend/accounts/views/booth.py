@@ -7,7 +7,6 @@ from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
-from django.utils import timezone
 
 from .common import get_fields, check_authority
 
@@ -92,97 +91,3 @@ class BoothMenuDetailAPIView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({"message": "권한이 없습니다. 자신의 부스 메뉴만 삭제할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-class BoothOrderAPIView(APIView):
-    permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
-
-    def get(self, request, booth_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
-        user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
-
-        instance = get_object_or_404(User, pk=booth_id)
-        if user == instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
-            booth_orders = Order.objects.filter(email=booth_id)
-            if not booth_orders.exists():
-                return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
-
-            serializer = OrderSerializer(booth_orders, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-
-class TableOrderAPIView(APIView):
-    permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
-
-    def get(self, request, booth_id, table_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get('email')
-        table_orders = Order.objects.filter(table_id=table_id, email_id=email)
-        if not table_orders.exists():
-            return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
-
-        serializer = OrderSerializer(table_orders, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK)
-
-    def post(self, request, booth_id, table_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get('email')
-        state = "주문완료"
-
-
-        content = request.data.get('content', [])
-        orders = []
-        for item in content:
-            order_data = {
-                'table_id': table_id,
-                'email': email,
-                'menu_id': item.get('menu_id'),
-                'timestamp': timezone.now(),
-                'quantity': item.get('quantity'),
-                'state': state
-            }
-            serializer = OrderSerializer(data=order_data)
-            if serializer.is_valid():  #주문이 유효한 경우 메뉴가 존재확인
-                menu_id = item.get('menu_id')
-                menu_name = item.get('menu_name')
-                if not BoothMenu.objects.filter(pk=menu_id, menu_name=menu_name).exists(): #메뉴가 존재하지 않는 경우 404 응답 반환
-                    return Response({"message": "존재하는 메뉴가 아닙니다."}, status=status.HTTP_404_NOT_FOUND)
-                serializer.save()
-                orders.append(serializer.data)  #생성된 주문을 리스트에 추가
-            else:
-                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-        if orders:
-            return Response({"content": orders}, status=status.HTTP_201_CREATED)
-        else:  #주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
-            return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
-
-
-class TableOrderControlAPIView(APIView):
-    permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
-
-    def patch(self, request, booth_id, table_id, order_id):
-        if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
-            order_instance = get_object_or_404(Order, order_id=order_id)
-            serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save(instance=order_instance)
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"message": "유효하지 않는 주문입니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-    def delete(self, request, booth_id, table_id, order_id):
-        if check_authority(request, booth_id):
-            order_instance = get_object_or_404(Order, order_id=order_id)
-            order_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
-

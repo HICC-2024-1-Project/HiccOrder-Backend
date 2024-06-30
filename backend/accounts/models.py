@@ -124,18 +124,6 @@ class Order(models.Model):
     timestamp = models.DateTimeField(primary_key=True, null=False, blank=False)
     quantity = models.PositiveIntegerField( null=False, blank=False)
     state = models.CharField(max_length=10, null=False, blank=False)
-    order_id = models.CharField(max_length=100, null=True, blank=True, unique=True)
-
-    def save(self, *args, **kwargs):
-        if not self.order_id:
-            last_order = Order.objects.order_by('order_id').last()
-            if last_order:
-                last_order_id = last_order.order_id
-                order_id_int = int(last_order_id) + 1
-                self.order_id = str(order_id_int)
-            else:
-                self.order_id = "1"
-        super().save(*args, **kwargs)
 
     objects = OrderManager()
 
