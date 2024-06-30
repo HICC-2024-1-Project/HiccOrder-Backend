@@ -1,0 +1,8 @@
+Django==4.2.13
+djangorestframework-simplejwt
+django_allauth
+dj_rest_auth
+requests
+python-dotenv
+django-cors-headers
+gunicorn

@@ -2,3 +2,5 @@
 
 # no secrets.json files
 *secrets.json
+# no .env files
+.env

@@ -1,17 +1,35 @@
-import jwt
-from rest_framework.views import APIView
+import datetime
 
-from ..serializers import *
+import jwt
+import time
+
+from rest_framework.views import APIView
+from rest_framework_simplejwt.exceptions import TokenError, InvalidToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, TokenRefreshSerializer
-from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
+from rest_framework import status
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import NotFound
+
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
+from django.core.cache import cache
+from django.utils.crypto import get_random_string
+from django.shortcuts import redirect
+
 from backend.settings import SECRET_KEY
+
+from ..models import *
+from ..serializers import *
+from ..permissions import TemporaryUserPermission
+
+from .common import check_authority
 
 
 class SignAPIView(APIView):
+    # 회원 가입
     def post(self, request):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
@@ -40,6 +58,7 @@ class SignAPIView(APIView):
             return res
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+    # 회원 탈퇴
     def delete(self, request):
         permission_classes = [IsAuthenticated]
         user = request.user
@@ -140,3 +159,87 @@ class EmailDuplication(APIView):
             return Response(status=status.HTTP_200_OK)
         else:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+
+class GenerateTemporaryLinkAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+
+    def get(self, request, *args, **kwargs):
+        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
+        # 토큰으로 user 정보 확인
+        try:
+            token_obj = Token.objects.get(key=access_token)
+            user = token_obj.user
+            table_id = request.data['table_id']
+        except Token.DoesNotExist:
+            raise NotFound('Token not found')
+        # 유저 정보에서 이메일만 사용
+        expire_time = int(time.time()) + 300  # 유효기간 5분 (300초)
+        token = get_random_string(20)
+
+        cache.set(token, {'expire_time': expire_time, 'booth_id': user.email, 'table_id': table_id}, timeout=300)  # 캐시에 5분 동안 저장
+
+        temporary_url = request.build_absolute_uri('/api/auth/qrsignin/' + token + '/')  # URL 직접 작성
+        print(temporary_url)
+        return Response({'temporary_url': temporary_url}, status=status.HTTP_200_OK)
+
+
+class TemporaryResourceAPIView(APIView):
+    def get(self, request, token, *args, **kwargs):
+        cached_data = cache.get(token)
+
+        if not cached_data:
+            raise PermissionDenied('Link is invalid or expired')
+
+        expire_time = cached_data['expire_time']
+        if time.time() > expire_time:
+            raise PermissionDenied('Link has expired')
+        # 캐시에서 정보를 제거하여 링크가 한 번만 사용되도록 함
+        cache.delete(token)
+        # 새로운 토큰 생성
+        token = get_random_string(20)
+
+        # 세션에 임시 ID 저장
+        request.session['temporary_user_id'] = token
+        cache.set(token, {'expire_time': expire_time,
+                          'booth_id': cached_data['email'],
+                          'table_id': cached_data['table_id']},
+                  timeout=6000)  # 캐시에 100분 동안 저장
+
+        # 쿠키에 임시 세션 ID 설정
+        response = redirect('/frontend-page/')
+        response.set_cookie('temporary_user_id', token, max_age=300)  # 쿠키 유효기간 5분
+
+        # 리소스에 접근하는 로직 추가
+        return response
+
+
+class RefreshView(APIView):
+    # 토큰 재발급
+    def post(self, request):
+        refresh_token = request.data.get("refresh")
+        if not refresh_token:
+            return Response({"error": "Refresh token is missing"}, status=status.HTTP_400_BAD_REQUEST)
+
+        data = {"refresh": refresh_token}
+        serializer = TokenRefreshSerializer(data=data)
+
+        try:
+            serializer.is_valid(raise_exception=True)
+            token = serializer.validated_data
+            now = datetime.datetime.now().isoformat()
+            res = Response(
+                {
+                    "timestamp": now,
+                    "token": {
+                        "access": token['access']
+                    },
+                    "success": "true"
+                },
+                status=status.HTTP_200_OK
+            )
+            return res
+        except TokenError as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except InvalidToken as e:
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
