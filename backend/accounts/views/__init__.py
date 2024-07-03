@@ -1,7 +1,8 @@
 from .auth import *
 from .booth import *
 from .table import *
-
+from .oauth import *
+from .email import *
 __all__ = [
     'SignAPIView',
     'AuthAPIView',
