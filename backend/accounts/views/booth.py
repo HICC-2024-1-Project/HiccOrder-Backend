@@ -98,12 +98,9 @@ class BoothOrderAPIView(APIView):
     permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
 
     def get(self, request, booth_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
-        user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
+        authority = check_authority(request, booth_id)
 
-        instance = get_object_or_404(User, pk=booth_id)
-        if user == instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
+        if authority == True:
             booth_orders = Order.objects.filter(email=booth_id)
             if not booth_orders.exists():
                 return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
