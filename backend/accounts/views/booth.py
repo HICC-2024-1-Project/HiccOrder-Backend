@@ -152,7 +152,7 @@ class TableOrderAPIView(APIView):
                 serializer.save()
                 orders.append(serializer.data)  #생성된 주문을 리스트에 추가
             else:
-                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         if orders:
             return Response({"content": orders}, status=status.HTTP_201_CREATED)
@@ -171,7 +171,7 @@ class TableOrderControlAPIView(APIView):
                 serializer.save(instance=order_instance)
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
-                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "유효하지 않는 주문입니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
