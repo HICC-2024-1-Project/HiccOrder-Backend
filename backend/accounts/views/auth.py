@@ -9,15 +9,17 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
+from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework.authtoken.models import Token
 from rest_framework.exceptions import NotFound
+from rest_framework_simplejwt.backends import TokenBackend
 
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django.utils.crypto import get_random_string
 from django.shortcuts import redirect
+from rest_framework_simplejwt.tokens import AccessToken
 
 from backend.settings import SECRET_KEY
 
@@ -166,18 +168,17 @@ class GenerateTemporaryLinkAPIView(APIView):
 
     def get(self, request, *args, **kwargs):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        # 토큰으로 user 정보 확인
         try:
-            token_obj = Token.objects.get(key=access_token)
-            user = token_obj.user
+            token = AccessToken(access_token)
+            user_id = token.payload['email']
             table_id = request.data['table_id']
-        except Token.DoesNotExist:
+
+        except:
             raise NotFound('Token not found')
-        # 유저 정보에서 이메일만 사용
         expire_time = int(time.time()) + 300  # 유효기간 5분 (300초)
         token = get_random_string(20)
 
-        cache.set(token, {'expire_time': expire_time, 'booth_id': user.email, 'table_id': table_id}, timeout=300)  # 캐시에 5분 동안 저장
+        cache.set(token, {'expire_time': expire_time, 'booth_id': user_id, 'table_id': table_id}, timeout=300)  # 캐시에 5분 동안 저장
 
         temporary_url = request.build_absolute_uri('/api/auth/qrsignin/' + token + '/')  # URL 직접 작성
         print(temporary_url)
@@ -202,7 +203,7 @@ class TemporaryResourceAPIView(APIView):
         # 세션에 임시 ID 저장
         request.session['temporary_user_id'] = token
         cache.set(token, {'expire_time': expire_time,
-                          'booth_id': cached_data['email'],
+                          'booth_id': cached_data['booth_id'],
                           'table_id': cached_data['table_id']},
                   timeout=6000)  # 캐시에 100분 동안 저장
 
