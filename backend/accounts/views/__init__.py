@@ -20,6 +20,6 @@ __all__ = [
     'VerifyCodeView',
     'GenerateTemporaryLinkAPIView',
     'TemporaryResourceAPIView',
-    'BoothMenuDetailAPIView'
-
+    'BoothMenuDetailAPIView',
+    'OrderPaymentAPIView'
 ]

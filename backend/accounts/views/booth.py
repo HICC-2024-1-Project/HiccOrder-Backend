@@ -186,3 +186,48 @@ class TableOrderControlAPIView(APIView):
         else:
             return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
+
+class OrderPaymentAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, booth_id, table_id):
+        # booth_id = 'boy814@naver.com'
+        # table_id = '1'
+        if not check_authority(request, booth_id):
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        orders = Order.objects.filter(table_id=table_id, email=booth_id)
+
+        menu_prices = []
+        # 전부 조리완료 상태인지 확인, 메뉴 총 가격 저장
+        for order in orders:
+            if order.state != "조리완료":
+                return Response({"message": "조리가 완료되지 않은 품목이 있습니다."}, status=status.HTTP_409_CONFLICT)
+            menu = order.menu_id
+            menu_prices.append(menu.price)
+
+        # serializer를 여러개 생성하고 문제가 있는지 확인
+        serializers = []
+        for i, order in enumerate(orders):
+            total_price = 0
+            total_price += menu_prices[i] * order.quantity
+            serializer = PaymentSerializer(data=dict({'table_id': table_id,
+                                                      'email': booth_id,
+                                                      'menu_id': order.menu_id.id,
+                                                      'timestamp': timezone.now(),
+                                                      'price': total_price,
+                                                      'quantity': order.quantity}))
+            serializers.append(serializer)
+
+        # 생성한 serializer가 유효한지 확인
+        for serializer in serializers:
+            if not serializer.is_valid(raise_exception=True):
+                return Response({'message': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
+        # 생성한 serializer를 활용해 값 저장
+        for serializer in serializers:
+            serializer.save()
+
+        # 주문 기록 전부 지우기
+        orders.delete()
+
+        return Response(status=status.HTTP_204_NO_CONTENT)

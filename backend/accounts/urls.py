@@ -26,5 +26,6 @@ urlpatterns = [
     path("booth/<str:booth_id>/table/<str:table_id>/", TableDetailAPIVIew.as_view()),
     path("booth/<str:booth_id>/order/", BoothOrderAPIView.as_view()), #전체 주문 목록 확인
     path("booth/<str:booth_id>/order/<str:table_id>/", TableOrderAPIView.as_view()), #테이블 주문 및 주문확인
-    path("booth/<str:booth_id>/order/<str:table_id>/<str:order_id>/", TableOrderControlAPIView.as_view()) #주문한 메뉴 수정, 삭제
+    path("booth/<str:booth_id>/order/<str:table_id>/<str:order_id>/", TableOrderControlAPIView.as_view()), #주문한 메뉴 수정, 삭제
+    path("booth/<str:booth_id>/payment/<str:table_id>/", OrderPaymentAPIView.as_view())
 ]
