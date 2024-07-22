@@ -131,7 +131,7 @@ class TableOrderAPIView(APIView):
 
         email = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
-        table_orders = Order.objects.filter(table_id=table_id, email_id=email)
+        table_orders = Order.objects.filter(table_id=table_id, email_id=email).exclude(state='결제완료') #결제상태로 사용자를 구분
         if not table_orders.exists():
             return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -208,6 +208,5 @@ class TableOrderControlAPIView(APIView):
             return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
 
 
