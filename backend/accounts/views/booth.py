@@ -209,4 +209,18 @@ class TableOrderControlAPIView(APIView):
         else:
             return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-
+    def post(self, request, booth_id, table_id, order_id):  # 주문 상태 변경
+        if check_authority(request, booth_id):
+            order_instance = get_object_or_404(Order, order_id=order_id)
+            if order_instance.state == "주문완료":
+                order_instance.state = "조리중"
+                order_instance.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            elif order_instance.state == "조리중":
+                order_instance.state == "조리완료"
+                order_instance.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
