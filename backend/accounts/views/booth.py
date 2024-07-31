@@ -1,10 +1,13 @@
 import jwt
+from django.core import cache
+from django.core.cache import cache
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
 from ..serializers import *     # model도 포함
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
@@ -112,23 +115,46 @@ class BoothOrderAPIView(APIView):
 
 
 class TableOrderAPIView(APIView):
-    permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
-
+    permission_classes = [AllowAny]
     def get(self, request, booth_id, table_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get('email')
-        table_orders = Order.objects.filter(table_id=table_id, email_id=email)
+        cookie_token = request.COOKIES.get('temporary_user_id')
+        if not cookie_token:
+            raise PermissionDenied('No session token provided')
+
+        temporary_user_id = request.session['temporary_user_id']
+        if temporary_user_id != cookie_token:
+            raise PermissionDenied('Session token mismatch')
+
+        cached_data = cache.get(temporary_user_id)
+        if not cached_data:
+            raise PermissionDenied('Session data expired or invalid')
+
+        email = cached_data.get('booth_id')
+        table_id = cached_data.get('table_id')
+        table_orders = Order.objects.filter(table_id=table_id, email_id=email).exclude(state='결제완료') #결제상태로 사용자를 구분
         if not table_orders.exists():
             return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
 
         serializer = OrderSerializer(table_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
+
+
     def post(self, request, booth_id, table_id):
-        access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])
-        email = payload.get('email')
+        cookie_token = request.COOKIES.get('temporary_user_id')
+        if not cookie_token:
+            raise PermissionDenied('No session token provided')
+
+        temporary_user_id = request.session['temporary_user_id']
+        if temporary_user_id != cookie_token:
+            raise PermissionDenied('Session token mismatch')
+
+        cached_data = cache.get(temporary_user_id)
+        if not cached_data:
+            raise PermissionDenied('Session data expired or invalid')
+
+        email = cached_data.get('booth_id')
+        table_id = cached_data.get('table_id')
         state = "주문완료"
 
 
@@ -183,3 +209,18 @@ class TableOrderControlAPIView(APIView):
         else:
             return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
+    def post(self, request, booth_id, table_id, order_id):  # 주문 상태 변경
+        if check_authority(request, booth_id):
+            order_instance = get_object_or_404(Order, order_id=order_id)
+            if order_instance.state == "주문완료":
+                order_instance.state = "조리중"
+                order_instance.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            elif order_instance.state == "조리중":
+                order_instance.state == "조리완료"
+                order_instance.save()
+                return Response(status=status.HTTP_204_NO_CONTENT)
+            else:
+                return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        else:
+            return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
