@@ -166,7 +166,7 @@ class EmailDuplication(APIView):
 class GenerateTemporaryLinkAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
-    def get(self, request, *args, **kwargs):
+    def patch(self, request, *args, **kwargs):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         try:
             token = AccessToken(access_token)
