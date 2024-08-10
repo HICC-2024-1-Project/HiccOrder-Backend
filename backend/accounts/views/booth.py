@@ -5,11 +5,14 @@ from ..serializers import *     # model도 포함
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
-from backend.settings import SECRET_KEY
+from backend.settings import SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, IMAGE_URL
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
 from .common import get_fields, check_authority
+
+import boto3
+import uuid
 
 
 class BoothAPIView(APIView):
@@ -21,8 +24,19 @@ class BoothAPIView(APIView):
         user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
 
         instance = get_object_or_404(User, pk=booth_id)
-        if user == instance:    # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
-            serializer = UserSerializer(instance, data=request.data, partial=True)
+        if user == instance:
+            data = request.data.copy()
+            file = request.FILES.get('file')
+
+            if file:
+                s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+                key = "%s" % (booth_id)
+                file._set_name(str(uuid.uuid4()))
+                s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file, ContentType='image/jpeg')
+                image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
+                data['booth_image_url'] = image_url
+
+            serializer = UserSerializer(instance, data=data, partial=True)
 
             if not serializer.is_valid():
                 return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -76,12 +90,26 @@ class BoothMenuDetailAPIView(APIView):
     def patch(self, request, booth_id, menu_id):
         if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
             booth_menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
-            serializer = BoothMenuSerializer(instance=booth_menu_instance, data=request.data, partial=True)
+            data = request.data.copy()
+            file = request.FILES.get('file')
+
+            if file:
+                s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
+                                     aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+                key = "%s" % (booth_id)
+                file._set_name(str(uuid.uuid4()))
+                s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
+                                                               ContentType='image/jpeg')
+                image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
+                data['menu_image_url'] = image_url
+
+            serializer = BoothMenuSerializer(instance=booth_menu_instance, data=data, partial=True)
+
             if serializer.is_valid(raise_exception=True):
                 serializer.save(instance=booth_menu_instance)
                 return Response(status=status.HTTP_204_NO_CONTENT)
             else:
-                Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+                return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
         else:
             return Response({"message": "권한이 없습니다. 자신의 부스 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
