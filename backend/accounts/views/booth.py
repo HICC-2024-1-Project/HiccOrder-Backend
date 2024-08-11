@@ -119,15 +119,15 @@ class TableOrderAPIView(APIView):
     def get(self, request, booth_id, table_id):
         cookie_token = request.COOKIES.get('temporary_user_id')
         if not cookie_token:
-            raise PermissionDenied('No session token provided')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         temporary_user_id = request.session['temporary_user_id']
         if temporary_user_id != cookie_token:
-            raise PermissionDenied('Session token mismatch')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         cached_data = cache.get(temporary_user_id)
         if not cached_data:
-            raise PermissionDenied('Session data expired or invalid')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
         email = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
@@ -143,15 +143,15 @@ class TableOrderAPIView(APIView):
     def post(self, request, booth_id, table_id):
         cookie_token = request.COOKIES.get('temporary_user_id')
         if not cookie_token:
-            raise PermissionDenied('No session token provided')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         temporary_user_id = request.session['temporary_user_id']
         if temporary_user_id != cookie_token:
-            raise PermissionDenied('Session token mismatch')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         cached_data = cache.get(temporary_user_id)
         if not cached_data:
-            raise PermissionDenied('Session data expired or invalid')
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
         email = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
