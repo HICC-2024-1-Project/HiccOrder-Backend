@@ -115,7 +115,7 @@ class BoothOrderAPIView(APIView):
 
 
 class TableOrderAPIView(APIView):
-    permission_classes = [AllowAny]
+    
     def get(self, request, booth_id, table_id):
         cookie_token = request.COOKIES.get('temporary_user_id')
         if not cookie_token:
