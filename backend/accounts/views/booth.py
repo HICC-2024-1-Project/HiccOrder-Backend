@@ -12,7 +12,7 @@ from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from .common import get_fields, check_authority
+from .common import get_fields, check_authority, search_cache
 
 
 class BoothAPIView(APIView):
@@ -187,34 +187,50 @@ class TableOrderAPIView(APIView):
 
 
 class TableOrderControlAPIView(APIView):
-    permission_classes = [IsAuthenticated] #권한 확인 + 토큰 유효성 검사
 
     def patch(self, request, booth_id, table_id, order_id):
-        if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
-            order_instance = get_object_or_404(Order, order_id=order_id)
-            serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
-            if serializer.is_valid(raise_exception=True):
-                serializer.save(instance=order_instance)
-                return Response(status=status.HTTP_204_NO_CONTENT)
-            else:
-                return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            return Response({"message": "유효하지 않는 주문입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        cookie_value = request.COOKIES.get('temporary_user_id')
+        if not cookie_value:
+            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        cache_data = cache.get(cookie_value)
+        if not cache_data:
+            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
+        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
+            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        order_instance = get_object_or_404(Order, order_id=order_id)
+        serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
+        if serializer.is_valid(raise_exception=True):
+            serializer.save(instance=order_instance)
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, booth_id, table_id, order_id):
-        if check_authority(request, booth_id):
-            order_instance = get_object_or_404(Order, order_id=order_id)
-            order_instance.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        cookie_value = request.COOKIES.get('temporary_user_id')
+        if not cookie_value:
+            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        cache_data = cache.get(cookie_value)
+        if not cache_data:
+            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
+        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
+            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        order_instance = get_object_or_404(Order, order_id=order_id)
+        order_instance.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
     def post(self, request, booth_id, table_id, order_id):  # 주문 상태 변경
-        if check_authority(request, booth_id):
-            orderstate = request.data.get("state")
-            order_instance = get_object_or_404(Order, order_id=order_id)
-            order_instance.state = orderstate
-            order_instance.save()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        else:
-            return Response({"message": "잘못된 접근입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        cookie_value = request.COOKIES.get('temporary_user_id')
+        if not cookie_value:
+            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        cache_data = cache.get(cookie_value)
+        if not cache_data:
+            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
+        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
+            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+
+        orderstate = request.data.get("state")
+        order_instance = get_object_or_404(Order, order_id=order_id)
+        order_instance.state = orderstate
+        order_instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
