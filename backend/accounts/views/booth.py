@@ -1,18 +1,17 @@
 import jwt
 from django.core import cache
 from django.core.cache import cache
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.views import APIView
 
 from ..serializers import *     # model도 포함
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.permissions import IsAuthenticated
 from backend.settings import SECRET_KEY
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
-from .common import get_fields, check_authority, search_cache
+from .common import get_fields, check_authority
 
 
 class BoothAPIView(APIView):
@@ -115,122 +114,93 @@ class BoothOrderAPIView(APIView):
 
 
 class TableOrderAPIView(APIView):
-
-    def get(self, request, booth_id, table_id):
-        cookie_token = request.COOKIES.get('temporary_user_id')
-        if not cookie_token:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        temporary_user_id = request.session['temporary_user_id']
-        if temporary_user_id != cookie_token:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+    def get(self, request):
+        temporary_user_id = request.COOKIES.get('temporary_user_id')
+        if not temporary_user_id:
+            return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         cached_data = cache.get(temporary_user_id)
         if not cached_data:
             return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        email = cached_data.get('booth_id')
+        booth_id = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
-        table_orders = Order.objects.filter(table_id=table_id, email_id=email).exclude(state='결제완료') #결제상태로 사용자를 구분
-        if not table_orders.exists():
-            return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
+
+        table_orders = Order.objects.filter(table_id=table_id, email_id=booth_id).exclude(state='결제완료') #결제상태로 사용자를 구분
 
         serializer = OrderSerializer(table_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-
-
-    def post(self, request, booth_id, table_id):
-        cookie_token = request.COOKIES.get('temporary_user_id')
-        if not cookie_token:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-
-        temporary_user_id = request.session['temporary_user_id']
-        if temporary_user_id != cookie_token:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+    def post(self, request):
+        temporary_user_id = request.COOKIES.get('temporary_user_id')
+        if not temporary_user_id:
+            return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
         cached_data = cache.get(temporary_user_id)
         if not cached_data:
             return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        email = cached_data.get('booth_id')
+        booth_id = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
         state = "주문완료"
-
 
         content = request.data.get('content', [])
         orders = []
         for item in content:
             order_data = {
                 'table_id': table_id,
-                'email': email,
+                'email': booth_id,
                 'menu_id': item.get('menu_id'),
                 'timestamp': timezone.now(),
                 'quantity': item.get('quantity'),
                 'state': state
             }
             serializer = OrderSerializer(data=order_data)
-            if serializer.is_valid():  #주문이 유효한 경우 메뉴가 존재확인
+            if serializer.is_valid():  # 주문이 유효한 경우 메뉴가 존재확인
                 menu_id = item.get('menu_id')
-                menu_name = item.get('menu_name')
-                if not BoothMenu.objects.filter(pk=menu_id, menu_name=menu_name).exists(): #메뉴가 존재하지 않는 경우 404 응답 반환
+                if not BoothMenu.objects.filter(pk=menu_id).exists():  # 메뉴가 존재하지 않는 경우 404 응답 반환
                     return Response({"message": "존재하는 메뉴가 아닙니다."}, status=status.HTTP_404_NOT_FOUND)
                 serializer.save()
-                orders.append(serializer.data)  #생성된 주문을 리스트에 추가
+                orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
             else:
                 return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
         if orders:
             return Response({"content": orders}, status=status.HTTP_201_CREATED)
-        else:  #주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
+        else:  # 주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
             return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TableOrderControlAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
     def patch(self, request, booth_id, table_id, order_id):
-        cookie_value = request.COOKIES.get('temporary_user_id')
-        if not cookie_value:
-            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
-        cache_data = cache.get(cookie_value)
-        if not cache_data:
-            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
-        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
-            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        authority = check_authority(request, booth_id)
 
-        order_instance = get_object_or_404(Order, order_id=order_id)
-        serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
-        if serializer.is_valid(raise_exception=True):
-            serializer.save(instance=order_instance)
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        if authority:
+            order_instance = get_object_or_404(Order, order_id=order_id)
+            serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
+            if serializer.is_valid(raise_exception=True):
+                serializer.save(instance=order_instance)
+                return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
     def delete(self, request, booth_id, table_id, order_id):
-        cookie_value = request.COOKIES.get('temporary_user_id')
-        if not cookie_value:
-            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
-        cache_data = cache.get(cookie_value)
-        if not cache_data:
-            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
-        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
-            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        authority = check_authority(request, booth_id)
 
-        order_instance = get_object_or_404(Order, order_id=order_id)
-        order_instance.delete()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if authority:
+            order_instance = get_object_or_404(Order, order_id=order_id)
+            order_instance.delete()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message":"권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
     def post(self, request, booth_id, table_id, order_id):  # 주문 상태 변경
-        cookie_value = request.COOKIES.get('temporary_user_id')
-        if not cookie_value:
-            return Response({"message: 'temporary_user_id' cookie is empty.'"}, status=status.HTTP_401_UNAUTHORIZED)
-        cache_data = cache.get(cookie_value)
-        if not cache_data:
-            return Response({"message: 'temporary_user_id' is not valid.'"}, status=status.HTTP_403_FORBIDDEN)
-        if not booth_id == cache_data['booth_id'] and not table_id == cache_data['table_id']:
-            return Response({"message: 'You can only order your table or booth.'"}, status=status.HTTP_401_UNAUTHORIZED)
+        authority = check_authority(request, booth_id)
 
-        orderstate = request.data.get("state")
-        order_instance = get_object_or_404(Order, order_id=order_id)
-        order_instance.state = orderstate
-        order_instance.save()
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        if authority:
+            order_state = request.data.get("state")
+            order_instance = get_object_or_404(Order, order_id=order_id)
+            order_instance.state = order_state
+            order_instance.save()
+            return Response(status=status.HTTP_204_NO_CONTENT)
+        return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
