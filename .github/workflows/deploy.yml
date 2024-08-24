@@ -52,8 +52,8 @@ jobs:
           script: |
             sudo apt-get update
             sudo apt-get -y upgrade
-            cd /home/ubuntu/hiccOrder/HiccOrder-Backend/backend
-            source /home/ubuntu/hiccOrderBackbin/activate
+            cd /home/ubuntu/HiccOrder-Backend/backend
+            source /home/ubuntu/HiccOrder-Backend/backend_env/bin/activate
             git pull
             python manage.py makemigrations
             python manage.py migrate

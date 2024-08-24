@@ -50,7 +50,7 @@ class BoothMenuAPIView(APIView):
         serializer = BoothMenuSerializer(instance=booth_menu_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
-    def patch(self, request, booth_id):
+    def post(self, request, booth_id):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
         user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인

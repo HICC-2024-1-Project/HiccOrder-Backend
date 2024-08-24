@@ -5,10 +5,12 @@ from rest_framework.views import APIView
 from ..serializers import UserSerializerWithNoPassword, UserSerializer
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.response import Response
+from django.shortcuts import redirect
+
 import os
 from json import JSONDecodeError
 from rest_framework import status
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 import requests
 
 
@@ -66,23 +68,26 @@ class GoogleCallbackAPIView(APIView):
             user = User.objects.get(email=email)
         except User.DoesNotExist:
             user = None
-        if user is not None and user.is_oauth:
-            # 이미 회원이 존재하는 경우, 로그인을 수행하고 토큰을 발급합니다.
-            token = TokenObtainPairSerializer.get_token(user)
-            refresh_token = str(token)
-            access_token = str(token.access_token)
-            response_data = {
-                "user": UserSerializer(user).data,
-                "message": "login success",
-                "token": {
-                    "access": access_token,
-                    "refresh": refresh_token,
-                },
-            }
-            response = Response(response_data, status=status.HTTP_200_OK)
-            response.set_cookie("access", access_token, httponly=True)
-            response.set_cookie("refresh", refresh_token, httponly=True)
-            return response
+        if user:
+            if user.is_oauth:
+                # 이미 회원이 존재하는 경우, 로그인을 수행하고 토큰을 발급합니다.
+                token = TokenObtainPairSerializer.get_token(user)
+                refresh_token = str(token)
+                access_token = str(token.access_token)
+                response_data = {
+                    "user": UserSerializer(user).data,
+                    "message": "login success",
+                    "token": {
+                        "access": access_token,
+                        "refresh": refresh_token,
+                    },
+                }
+                response = Response(response_data, status=status.HTTP_200_OK)
+                response.set_cookie("access", access_token, httponly=True)
+                response.set_cookie("refresh", refresh_token, httponly=True)
+                return response
+            else:
+                return HttpResponse('<script>alert("이미 일반 로그인으로 가입된 계정입니다. 일반 로그인으로 로그인 해주세요."); setTimeout(() => {window.location.href="/auth/login"}, 1000);</script>')
         else:
             # 새로운 회원 가입을 진행합니다.
             data = {"email": email, "password": '', "is_oauth": True}
