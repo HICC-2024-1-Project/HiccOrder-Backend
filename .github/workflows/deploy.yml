@@ -31,9 +31,11 @@ jobs:
       - name: Run Tests
         env:
           SECRET_KEY: ${{ secrets.SECRET_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ AWS_SECRET_ACCESS_KEY }}
         run: |
           cd ./backend
-          echo "{\"SECRET_KEY\": \"$SECRET_KEY\"}" > secrets.json
+          echo "{\"SECRET_KEY\": \"$SECRET_KEY\", \"AWS_ACCESS_KEY_ID\": \"$AWS_ACCESS_KEY_ID\", \"AWS_SECRET_ACCESS_KEY\": \"$AWS_SECRET_ACCESS_KEY\"}" > secrets.json
           python manage.py test
           rm secrets.json
 
