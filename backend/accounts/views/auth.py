@@ -23,11 +23,7 @@ from rest_framework_simplejwt.tokens import AccessToken
 
 from backend.settings import SECRET_KEY
 
-from ..models import *
 from ..serializers import *
-from ..permissions import TemporaryUserPermission
-
-from .common import check_authority
 
 
 class SignAPIView(APIView):
@@ -169,11 +165,11 @@ class GenerateTemporaryLinkAPIView(APIView):
     def patch(self, request, *args, **kwargs):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         try:
-            token = AccessToken(access_token)
-            user_id = token.payload['email']
-            table_id = request.data['table_id']
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
+            user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
 
-        except:
+            table_id = request.data['table_id']
+        except User.DoesNotExist:
             raise NotFound('Token not found')
         expire_time = int(time.time()) + 300  # 유효기간 5분 (300초)
         token = get_random_string(20)
@@ -201,7 +197,6 @@ class TemporaryResourceAPIView(APIView):
         token = get_random_string(20)
 
         # 세션에 임시 ID 저장
-        request.session['temporary_user_id'] = token
         cache.set(token, {'expire_time': expire_time,
                           'booth_id': cached_data['booth_id'],
                           'table_id': cached_data['table_id']},
@@ -209,7 +204,7 @@ class TemporaryResourceAPIView(APIView):
 
         # 쿠키에 임시 세션 ID 설정
         response = redirect('/frontend-page/')
-        response.set_cookie('temporary_user_id', token, max_age=300)  # 쿠키 유효기간 5분
+        response.set_cookie('temporary_user_id', token, max_age=6000)  # 쿠키 유효기간 100분
 
         # 리소스에 접근하는 로직 추가
         return response
