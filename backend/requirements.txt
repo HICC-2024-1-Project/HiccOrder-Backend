@@ -5,4 +5,5 @@ dj_rest_auth
 requests
 python-dotenv
 django-cors-headers
+boto3
 gunicorn

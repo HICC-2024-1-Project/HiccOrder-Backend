@@ -43,6 +43,8 @@ class BoothSerializer(serializers.ModelSerializer):
 
 
 class BoothMenuSerializer(serializers.ModelSerializer):
+    file = serializers.FileField(required=False, write_only=True)  # file 필드 추가
+
     class Meta:
         model = BoothMenu
         fields = '__all__'
@@ -69,7 +71,18 @@ class BoothMenuSerializer(serializers.ModelSerializer):
             price=validated_data['price'],
             description=validated_data['description'],
         )
+
         return booth_menu
+
+    def update(self, instance, validated_data):
+        file = validated_data.pop('file', None)  # file 필드 제거
+        for (key, value) in validated_data.items():
+            setattr(instance, key, value)
+        if file:
+            # 파일 업로드 로직 추가 가능
+            pass
+        instance.save()
+        return instance
 
 
 class TableSerializer(serializers.ModelSerializer):
