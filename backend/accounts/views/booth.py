@@ -1,5 +1,4 @@
 import jwt
-from django.core import cache
 from django.core.cache import cache
 from rest_framework.views import APIView
 
