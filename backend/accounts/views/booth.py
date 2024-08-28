@@ -1,16 +1,17 @@
 import jwt
-from django.core import cache
-from django.core.cache import cache
-from rest_framework.views import APIView
 
-from ..serializers import *     # model도 포함
-from rest_framework import status
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
-from backend.settings import SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, IMAGE_URL
+from django.core.cache import cache
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from rest_framework.views import APIView
+from rest_framework import status
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
+from backend.settings import SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, IMAGE_URL
+
+from ..serializers import *     # model도 포함
 from .common import get_fields, check_authority
 
 import boto3
@@ -136,7 +137,7 @@ class BoothMenuDetailAPIView(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        booth_menu = get_object_or_404(BoothMenu, pk=menu_id)
+        booth_menu = get_object_or_404(BoothMenu, pk=menu_id, email=loaded_booth_id)
         serializer = BoothMenuSerializer(instance=booth_menu)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
