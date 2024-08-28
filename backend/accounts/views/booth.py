@@ -119,6 +119,23 @@ class BoothMenuDetailAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
     def get(self, request, booth_id, menu_id):
+        access_token = request.headers.get('Authorization', None)
+        if access_token:
+            access_token = access_token.replace('Bearer ', '')
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
+            loaded_booth_id = payload['email']  # 이메일 값
+        else:
+            temporary_user_id = request.COOKIES.get('temporary_user_id')
+            if not temporary_user_id:
+                return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            cached_data = cache.get(temporary_user_id)
+            if not cached_data:
+                return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            loaded_booth_id = cached_data.get('booth_id')
+
+        if not booth_id == loaded_booth_id:
+            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+
         booth_menu = get_object_or_404(BoothMenu, pk=menu_id)
         serializer = BoothMenuSerializer(instance=booth_menu)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -188,7 +205,7 @@ class TableOrderAPIView(APIView):
         booth_id = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
 
-        table_orders = Order.objects.filter(table_id=table_id, email_id=booth_id).exclude(state='결제완료') #결제상태로 사용자를 구분
+        table_orders = Order.objects.filter(table_id=table_id, email_id=booth_id).exclude(state='결제완료') # 결제상태로 사용자를 구분
 
         serializer = OrderSerializer(table_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
