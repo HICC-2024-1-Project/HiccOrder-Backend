@@ -18,7 +18,7 @@ import uuid
 
 
 class BoothAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+    # permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
     def patch(self, request, booth_id):     # 부스 정보 추가 및 수정
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
@@ -49,17 +49,51 @@ class BoothAPIView(APIView):
             return Response({"message": "권한이 없습니다. 자신의 정보만 바꿀 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
     def get(self, request, booth_id):   # 부스 정보 가져오기
+        access_token = request.headers.get('Authorization', None)
+        if access_token:
+            access_token = access_token.replace('Bearer ', '')
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
+            loaded_booth_id = payload['email']  # 이메일 값
+        else:
+            temporary_user_id = request.COOKIES.get('temporary_user_id')
+            if not temporary_user_id:
+                return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            cached_data = cache.get(temporary_user_id)
+            if not cached_data:
+                return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            loaded_booth_id = cached_data.get('booth_id')
+
+        if not booth_id == loaded_booth_id:
+            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+
         user = get_object_or_404(User, pk=booth_id)
         data = get_fields(user,
-                               ['email', 'booth_name', 'bank_name', 'banker_name', 'account_number', 'booth_image_url'])
+                          ['email', 'booth_name', 'bank_name', 'banker_name', 'account_number', 'booth_image_url'])
         return Response(data, status=status.HTTP_200_OK)
 
 
 class BoothMenuAPIView(APIView):
-    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+    # permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
     def get(self, request, booth_id):
-        user = get_object_or_404(User, email=booth_id)
+        access_token = request.headers.get('Authorization', None)
+        if access_token:
+            access_token = access_token.replace('Bearer ', '')
+            payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
+            loaded_booth_id = payload['email']  # 이메일 값
+        else:
+            temporary_user_id = request.COOKIES.get('temporary_user_id')
+            if not temporary_user_id:
+                return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            cached_data = cache.get(temporary_user_id)
+            if not cached_data:
+                return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+            loaded_booth_id = cached_data.get('booth_id')
+
+        if not booth_id == loaded_booth_id:
+            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        user = get_object_or_404(User, pk=booth_id)
         booth_menu_items = BoothMenu.objects.filter(email=user)
         serializer = BoothMenuSerializer(instance=booth_menu_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)

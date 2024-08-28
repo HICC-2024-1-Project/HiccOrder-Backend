@@ -162,7 +162,7 @@ class EmailDuplication(APIView):
 class GenerateTemporaryLinkAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
-    def patch(self, request, *args, **kwargs):
+    def get(self, request, *args, **kwargs):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         try:
             payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
@@ -171,10 +171,10 @@ class GenerateTemporaryLinkAPIView(APIView):
             table_id = request.data['table_id']
         except User.DoesNotExist:
             raise NotFound('Token not found')
-        expire_time = int(time.time()) + 300  # 유효기간 5분 (300초)
+        expire_time = int(time.time()) + 3600  # 유효기간 60분
         token = get_random_string(20)
 
-        cache.set(token, {'expire_time': expire_time, 'booth_id': user_id, 'table_id': table_id}, timeout=300)  # 캐시에 5분 동안 저장
+        cache.set(token, {'expire_time': expire_time, 'booth_id': user.email, 'table_id': table_id}, timeout=3600)  # 캐시에 5분 동안 저장
 
         temporary_url = request.build_absolute_uri('/api/auth/qrsignin/' + token + '/')  # URL 직접 작성
         print(temporary_url)
