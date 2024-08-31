@@ -52,7 +52,11 @@ ALLOWED_HOSTS = ['*']
 
 #CORS 관련 추가
 CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000','http://localhost:3000']
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGIN_REGEXES = [
+    '.*',
+]
+
 CORS_ALLOW_METHODS = (
     "DELETE",
     "GET",
