@@ -204,7 +204,7 @@ class TemporaryResourceAPIView(APIView):
 
         # 쿠키에 임시 세션 ID 설정
         response = redirect('/frontend-page/')
-        response.set_cookie('temporary_user_id', token, max_age=6000)  # 쿠키 유효기간 100분
+        response.set_cookie('temporary_user_id', token, max_age=6000, domain=".ho.ccc.vg")  # 쿠키 유효기간 100분
 
         # 리소스에 접근하는 로직 추가
         return response
