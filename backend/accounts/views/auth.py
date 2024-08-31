@@ -162,7 +162,7 @@ class EmailDuplication(APIView):
 class GenerateTemporaryLinkAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
-    def get(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         access_token = request.headers.get('Authorization', None).replace('Bearer ', '')
         try:
             payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
