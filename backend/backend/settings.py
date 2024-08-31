@@ -56,6 +56,7 @@ CORS_ORIGIN_WHITELIST = ['http://127.0.0.1:3000', 'http://localhost:3000']
 CORS_ALLOWED_ORIGIN_REGEXES = [
     r"^.*$",
 ]
+CORS_ALLOW_CREDENTIALS = True
 CORS_ALLOW_METHODS = (
     "DELETE",
     "GET",
