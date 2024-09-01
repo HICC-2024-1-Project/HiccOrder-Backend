@@ -252,6 +252,8 @@ class TableOrderAPIView(APIView):
 
 
 class TableOrderManagerAPIView(APIView):
+    permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
+
     def get(self, request, booth_id, table_id):
         authority = check_authority(request, booth_id)
         if not authority:
@@ -260,6 +262,33 @@ class TableOrderManagerAPIView(APIView):
 
         serializer = OrderSerializer(table_orders, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def post(self, request, booth_id, table_id):
+        content = request.data.get('content', [])
+        orders = []
+        for item in content:
+            order_data = {
+                'table_id': table_id,
+                'email': booth_id,
+                'menu_id': item.get('menu_id'),
+                'timestamp': timezone.now(),
+                'quantity': item.get('quantity'),
+                'state': "주문완료"
+            }
+            serializer = OrderSerializer(data=order_data)
+            if serializer.is_valid():  # 주문이 유효한 경우 메뉴가 존재확인
+                menu_id = item.get('menu_id')
+                if not BoothMenu.objects.filter(pk=menu_id).exists():  # 메뉴가 존재하지 않는 경우 404 응답 반환
+                    return Response({"message": "존재하는 메뉴가 아닙니다."}, status=status.HTTP_404_NOT_FOUND)
+                serializer.save()
+                orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
+            else:
+                return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if orders:
+            return Response({"content": orders}, status=status.HTTP_201_CREATED)
+        else:  # 주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
+            return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class TableOrderControlAPIView(APIView):
