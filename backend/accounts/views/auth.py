@@ -177,7 +177,6 @@ class GenerateTemporaryLinkAPIView(APIView):
         cache.set(token, {'expire_time': expire_time, 'booth_id': user.email, 'table_id': table_id}, timeout=3600)  # 캐시에 5분 동안 저장
 
         temporary_url = request.build_absolute_uri('/api/auth/qrsignin/' + token + '/')  # URL 직접 작성
-        print(temporary_url)
         return Response({'temporary_url': temporary_url}, status=status.HTTP_200_OK)
 
 
