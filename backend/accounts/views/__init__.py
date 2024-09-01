@@ -13,6 +13,7 @@ __all__ = [
     'TableDetailAPIVIew',
     'BoothOrderAPIView',
     'TableOrderAPIView',
+    'TableOrderManagerAPIView',
     'TableOrderControlAPIView',
     'google_login',
     'GoogleCallbackAPIView',
@@ -20,6 +21,5 @@ __all__ = [
     'VerifyCodeView',
     'GenerateTemporaryLinkAPIView',
     'TemporaryResourceAPIView',
-    'BoothMenuDetailAPIView'
-
+    'BoothMenuDetailAPIView',
 ]

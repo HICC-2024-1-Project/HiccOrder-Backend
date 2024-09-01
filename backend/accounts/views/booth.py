@@ -251,6 +251,17 @@ class TableOrderAPIView(APIView):
             return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class TableOrderManagerAPIView(APIView):
+    def get(self, request, booth_id, table_id):
+        authority = check_authority(request, booth_id)
+        if not authority:
+            return Response({"message: 권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        table_orders = Order.objects.filter(table_id=table_id, email_id=booth_id).exclude(state='결제완료')  # 결제상태로 사용자를 구분
+
+        serializer = OrderSerializer(table_orders, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
+
+
 class TableOrderControlAPIView(APIView):
     permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
