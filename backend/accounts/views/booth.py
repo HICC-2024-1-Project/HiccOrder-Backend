@@ -329,7 +329,7 @@ class TableOrderControlAPIView(APIView):
 class OrderPaymentAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
-    def get(self, request, booth_id, table_id):
+    def post(self, request, booth_id, table_id):
         if not check_authority(request, booth_id):
             return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
         orders = Order.objects.filter(table_id=table_id, email=booth_id)
