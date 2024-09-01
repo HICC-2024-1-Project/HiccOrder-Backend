@@ -141,7 +141,6 @@ class OrderSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         return {
             'table_id': data['table_id'],
-            'order_id': data['order_id'],
             'id': data['email'],
             'menu_id': data['menu_id'],
             'timestamp': data['timestamp'],

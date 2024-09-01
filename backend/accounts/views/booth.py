@@ -182,15 +182,16 @@ class BoothOrderAPIView(APIView):
     def get(self, request, booth_id):
         authority = check_authority(request, booth_id)
 
-        if authority == True:
-            booth_orders = Order.objects.filter(email=booth_id)
-            if not booth_orders.exists():
-                return Response({"message": "주문 현황을 찾을 수 없음"}, status=status.HTTP_404_NOT_FOUND)
+        if not authority:
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)\
 
-            serializer = OrderSerializer(booth_orders, many=True)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        else:
-            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        booth_orders = Order.objects.filter(email=booth_id)
+        paid_orders = Payment.objects.filter(email=booth_id)
+
+        order_serializer = OrderSerializer(booth_orders, many=True)
+        paid_serializer = PaymentSerializer(paid_orders, many=True)
+
+        return Response(order_serializer.data + paid_serializer.data, status=status.HTTP_200_OK)
 
 
 class TableOrderAPIView(APIView):
@@ -222,9 +223,9 @@ class TableOrderAPIView(APIView):
 
         booth_id = cached_data.get('booth_id')
         table_id = cached_data.get('table_id')
-        state = "주문완료"
 
         content = request.data.get('content', [])
+        serializers = []
         orders = []
         for item in content:
             order_data = {
@@ -233,22 +234,21 @@ class TableOrderAPIView(APIView):
                 'menu_id': item.get('menu_id'),
                 'timestamp': timezone.now(),
                 'quantity': item.get('quantity'),
-                'state': state
+                'state': "주문완료"
             }
             serializer = OrderSerializer(data=order_data)
             if serializer.is_valid():  # 주문이 유효한 경우 메뉴가 존재확인
                 menu_id = item.get('menu_id')
                 if not BoothMenu.objects.filter(pk=menu_id).exists():  # 메뉴가 존재하지 않는 경우 404 응답 반환
                     return Response({"message": "존재하는 메뉴가 아닙니다."}, status=status.HTTP_404_NOT_FOUND)
-                serializer.save()
-                orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
+                serializers.append(serializer)
             else:
                 return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if orders:
-            return Response({"content": orders}, status=status.HTTP_201_CREATED)
-        else:  # 주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
-            return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        for serializer in serializers:
+            serializer.save()
+            orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
+        return Response({"content": orders}, status=status.HTTP_201_CREATED)
 
 
 class TableOrderManagerAPIView(APIView):
@@ -265,6 +265,7 @@ class TableOrderManagerAPIView(APIView):
 
     def post(self, request, booth_id, table_id):
         content = request.data.get('content', [])
+        serializers = []
         orders = []
         for item in content:
             order_data = {
@@ -280,15 +281,14 @@ class TableOrderManagerAPIView(APIView):
                 menu_id = item.get('menu_id')
                 if not BoothMenu.objects.filter(pk=menu_id).exists():  # 메뉴가 존재하지 않는 경우 404 응답 반환
                     return Response({"message": "존재하는 메뉴가 아닙니다."}, status=status.HTTP_404_NOT_FOUND)
-                serializer.save()
-                orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
+                serializers.append(serializer)
             else:
                 return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
-        if orders:
-            return Response({"content": orders}, status=status.HTTP_201_CREATED)
-        else:  # 주문이 하나도 생성되지 않은 경우 잘못된 요청 응답 반환
-            return Response({"message": "주문을 생성할 수 없습니다. 잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        for serializer in serializers:
+            serializer.save()
+            orders.append(serializer.data)  # 생성된 주문을 리스트에 추가
+        return Response({"content": orders}, status=status.HTTP_201_CREATED)
 
 
 class TableOrderControlAPIView(APIView):
