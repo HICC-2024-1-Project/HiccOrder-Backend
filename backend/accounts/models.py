@@ -128,3 +128,35 @@ class Order(models.Model):
 
     class Meta:
         db_table = 'order'
+
+
+class PaymentManager(models.Manager):
+    use_in_migrations = True
+
+    def create_payment(self, table_id, email, menu_id, timestamp, price, quantity):
+
+        payment = self.model(
+            email=email,
+            table_id=table_id,
+            menu_id=menu_id,
+            timestamp=timestamp,
+            price=price,
+            quantity=quantity,
+        )
+        payment.save(using=self._db)
+        return payment
+
+
+class Payment(models.Model):
+    table_id = models.ForeignKey(Table, related_name='payment', on_delete=models.PROTECT)
+    email = models.ForeignKey(User, related_name='payment', on_delete=models.PROTECT)
+    menu_id = models.ForeignKey(BoothMenu, related_name='payment', on_delete=models.PROTECT)
+    timestamp = models.DateTimeField(primary_key=True, null=False, blank=False, unique=False)
+    price = models.IntegerField(default=0, null=False, blank=False)
+    quantity = models.IntegerField(default=0, null=False, blank=False)
+
+    objects = PaymentManager()
+
+    class Meta:
+        db_table = 'payment'
+

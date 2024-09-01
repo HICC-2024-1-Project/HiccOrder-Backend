@@ -15,6 +15,7 @@ __all__ = [
     'TableOrderAPIView',
     'TableOrderManagerAPIView',
     'TableOrderControlAPIView',
+    'OrderPaymentAPIView',
     'google_login',
     'GoogleCallbackAPIView',
     'SendVerificationCodeView',

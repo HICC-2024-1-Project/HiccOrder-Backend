@@ -1,4 +1,4 @@
-from .models import User, BoothMenu, Table, Order #Order 추가함
+from .models import User, BoothMenu, Table, Order, Payment
 from rest_framework import serializers
 
 
@@ -149,3 +149,28 @@ class OrderSerializer(serializers.ModelSerializer):
             'state': data['state']
         }
 
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            incoming_fields = set(self.initial_data.keys())
+            defined_fields = set(self.fields.keys())
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
+
+    def create(self, validated_data):
+        payment = Payment.objects.create_payment(
+            table_id=validated_data['table_id'],
+            email=validated_data['email'],
+            menu_id=validated_data['menu_id'],
+            timestamp=validated_data['timestamp'],
+            price=validated_data['price'],
+            quantity=validated_data['quantity']
+        )
+        return payment

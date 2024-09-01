@@ -14,7 +14,8 @@ urlpatterns = [
     path("booth/order/", TableOrderAPIView.as_view()),  # 사용자용 테이블 주문 및 주문 확인
     path("booth/<str:booth_id>/order/", BoothOrderAPIView.as_view()),   # 전체 주문 목록 확인
     path("booth/<str:booth_id>/order/<str:table_id>/", TableOrderManagerAPIView.as_view()),  # 관리자용 테이블 주문 및 주문 확인
-    path("booth/<str:booth_id>/order/<str:table_id>/<str:order_id>/", TableOrderControlAPIView.as_view()), #주문한 메뉴 수정, 삭제
+    path("booth/<str:booth_id>/order/<str:table_id>/<str:order_id>/", TableOrderControlAPIView.as_view()),  # 주문한 메뉴 수정, 삭제, 상태 변경
+    path("booth/<str:booth_id>/payment/<str:table_id>/", OrderPaymentAPIView.as_view()),    # 결제
     path("booth/<str:booth_id>/", BoothAPIView.as_view()),
     path("booth/<str:booth_id>/menu/", BoothMenuAPIView.as_view()),
     path("auth/google/login/", google_login, name='google_login'),
