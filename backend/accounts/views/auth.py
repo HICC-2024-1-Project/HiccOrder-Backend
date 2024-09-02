@@ -9,17 +9,14 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied, ValidationError
-from rest_framework.authtoken.models import Token
+from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import NotFound
-from rest_framework_simplejwt.backends import TokenBackend
 
 from django.contrib.auth import authenticate
 from django.shortcuts import get_object_or_404
 from django.core.cache import cache
 from django.utils.crypto import get_random_string
 from django.shortcuts import redirect
-from rest_framework_simplejwt.tokens import AccessToken
 
 from backend.settings import SECRET_KEY
 
@@ -198,13 +195,18 @@ class TemporaryResourceAPIView(APIView):
         # 새로운 토큰 생성
         token = get_random_string(20)
 
-        # 세션에 임시 ID 저장
-        cache.set(token, {'expire_time': expire_time,
-                          'booth_id': cached_data['booth_id'],
-                          'table_id': cached_data['table_id']},
-                  timeout=6000)  # 캐시에 100분 동안 저장
+        customer_data = {
+            'customer_id': token,
+            'booth_id': cached_data['booth_id'],
+            'table_id': cached_data['table_id'],
+            'expire_time': expire_time
+        }
+        serializer = CustomerSerializer(data=customer_data)
+        if not serializer.is_valid():
+            return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+        serializer.save()
 
-        # 쿠키에 임시 세션 ID 설정
+        # # 쿠키에 임시 세션 ID 설정
         response = redirect(redirect_path)
         response.set_cookie('temporary_user_id', token, max_age=6000, domain=".ho.ccc.vg")  # 쿠키 유효기간 100분
 

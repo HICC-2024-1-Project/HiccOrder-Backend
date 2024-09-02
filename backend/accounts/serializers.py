@@ -1,4 +1,4 @@
-from .models import User, BoothMenu, Table, Order, Payment
+from .models import User, BoothMenu, Table, Order, Payment, Customer
 from rest_framework import serializers
 
 
@@ -173,3 +173,27 @@ class PaymentSerializer(serializers.ModelSerializer):
             quantity=validated_data['quantity']
         )
         return payment
+
+
+class CustomerSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Customer
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            incoming_fields = set(self.initial_data.keys())
+            defined_fields = set(self.fields.keys())
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
+
+    def create(self, validated_data):
+        customer = Customer.objects.create(
+            customer_id=validated_data['customer_id'],
+            table_id=validated_data['table_id'],
+            booth_id=validated_data['booth_id'],
+            expire_time=validated_data['expire_time']
+        )
+        return customer

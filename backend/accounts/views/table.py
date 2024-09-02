@@ -1,10 +1,9 @@
 import jwt
-from django.core.cache import cache
+import time
 from django.shortcuts import get_object_or_404
 
 from rest_framework import status
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
 
 from backend.settings import SECRET_KEY
@@ -24,10 +23,16 @@ class TableAPIView(APIView):
             temporary_user_id = request.COOKIES.get('temporary_user_id')
             if not temporary_user_id:
                 return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-            cached_data = cache.get(temporary_user_id)
-            if not cached_data:
+            try:
+                customer = Customer.objects.get(pk=temporary_user_id)
+            except Customer.DoesNotExist:
                 return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-            loaded_booth_id = cached_data.get('booth_id')
+            serializer = CustomerSerializer(instance=customer)
+            data = serializer.data
+            if time.time() > data['expire_time']:
+                customer.delete()
+                return Response({"message": "만료된 인증키입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            loaded_booth_id = data['booth_id']
 
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
@@ -61,10 +66,16 @@ class TableDetailAPIVIew(APIView):
             temporary_user_id = request.COOKIES.get('temporary_user_id')
             if not temporary_user_id:
                 return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-            cached_data = cache.get(temporary_user_id)
-            if not cached_data:
+            try:
+                customer = Customer.objects.get(pk=temporary_user_id)
+            except Customer.DoesNotExist:
                 return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
-            loaded_booth_id = cached_data.get('booth_id')
+            serializer = CustomerSerializer(instance=customer)
+            data = serializer.data
+            if time.time() > data['expire_time']:
+                customer.delete()
+                return Response({"message": "만료된 인증키입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+            loaded_booth_id = data['booth_id']
 
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)

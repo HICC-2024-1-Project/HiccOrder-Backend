@@ -160,3 +160,29 @@ class Payment(models.Model):
     class Meta:
         db_table = 'payment'
 
+
+class CustomerManager(models.Manager):
+    use_in_migrations = True
+
+    def create_customer(self, customer_id, email, table_id, expire_time):
+
+        customer = self.model(
+            customer_id=customer_id,
+            email=email,
+            table_id=table_id,
+            expire_time=expire_time,
+        )
+        customer.save(using=self._db)
+        return customer
+
+
+class Customer(models.Model):
+    customer_id = models.CharField(primary_key=True, max_length=20, unique=True, null=False, blank=False)
+    booth_id = models.ForeignKey(User, related_name='customer', on_delete=models.PROTECT)
+    table_id = models.ForeignKey(Table, related_name='customer', on_delete=models.PROTECT)
+    expire_time = models.IntegerField(null=False, blank=False)
+
+    objects = CustomerManager()
+
+    class Meta:
+        db_table = 'customer'

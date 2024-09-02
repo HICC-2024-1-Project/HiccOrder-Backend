@@ -47,35 +47,3 @@ def check_authority(request, booth_id):
         return True
     else:
         return False
-
-def search_cache(cache, target_field, target_value):
-    """cache에서 특정 키와 value를 찾는 함수이다.
-
-        Args:
-            cache: cache object in django LocMemCache
-            target_field: cache에서 찾을 키
-            target_value: cache에서 찾을 키의 값
-
-        Returns:
-            list 형태로 key만 반환 반환
-        """
-    keys = cache._cache.keys()
-    result_list = []
-    for key in keys:
-        value = cache._cache.get(key)
-        obj = pickle.loads(value)
-        if target_field in obj.keys():
-            if obj[target_field] == target_value:
-                result_list.append(key_seperator(key))
-    return result_list
-
-
-def key_seperator(key):
-    parts = key.split(':')
-
-    # 세 번째 부분 (인덱스 2)을 추출합니다.
-    if len(parts) > 2:
-        desired_part = parts[2]
-        return desired_part
-    else:
-        raise ValueError("문자열이 예상된 형식을 따르지 않습니다. ':' 구분자가 부족합니다.")
