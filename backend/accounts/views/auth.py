@@ -192,6 +192,9 @@ class TemporaryResourceAPIView(APIView):
             raise PermissionDenied('Link has expired')
         # 캐시에서 정보를 제거하여 링크가 한 번만 사용되도록 함
         cache.delete(token)
+        redirect_path = request.GET.get('r')
+        if not redirect_path:
+            return Response({"error": "redirect path가 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
         # 새로운 토큰 생성
         token = get_random_string(20)
 
@@ -202,7 +205,7 @@ class TemporaryResourceAPIView(APIView):
                   timeout=6000)  # 캐시에 100분 동안 저장
 
         # 쿠키에 임시 세션 ID 설정
-        response = redirect('/frontend-page/')
+        response = redirect(redirect_path)
         response.set_cookie('temporary_user_id', token, max_age=6000, domain=".ho.ccc.vg")  # 쿠키 유효기간 100분
 
         # 리소스에 접근하는 로직 추가
