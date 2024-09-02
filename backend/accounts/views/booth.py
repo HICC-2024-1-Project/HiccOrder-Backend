@@ -409,4 +409,7 @@ class OrderPaymentAPIView(APIView):
         # 주문 기록 전부 지우기
         orders.delete()
 
+        customer = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
+        customer.delete()
+
         return Response(status=status.HTTP_204_NO_CONTENT)
