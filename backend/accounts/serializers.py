@@ -140,8 +140,8 @@ class OrderSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         data = super().to_representation(instance)
         return {
+            'order_id': data['order_id'],
             'table_id': data['table_id'],
-            'id': data['email'],
             'menu_id': data['menu_id'],
             'timestamp': data['timestamp'],
             'quantity': data['quantity'],
