@@ -182,16 +182,19 @@ class TemporaryResourceAPIView(APIView):
         cached_data = cache.get(token)
 
         if not cached_data:
-            raise PermissionDenied('Link is invalid or expired')
+            # raise PermissionDenied('Link is invalid or expired')
+            return redirect('error/403/')
 
         expire_time = cached_data['expire_time']
         if time.time() > expire_time:
-            raise PermissionDenied('Link has expired')
+            # raise PermissionDenied('Link has expired')
+            return redirect('error/403/')
         # 캐시에서 정보를 제거하여 링크가 한 번만 사용되도록 함
         cache.delete(token)
         redirect_path = request.GET.get('r')
         if not redirect_path:
-            return Response({"error": "redirect path가 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            # return Response({"error": "redirect path가 없습니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return redirect('error/403/')
         # 새로운 토큰 생성
         token = get_random_string(20)
 
@@ -203,7 +206,8 @@ class TemporaryResourceAPIView(APIView):
         }
         serializer = CustomerSerializer(data=customer_data)
         if not serializer.is_valid():
-            return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            # return Response({"message": "잘못된 요청입니다."}, status=status.HTTP_400_BAD_REQUEST)
+            return redirect('error/403/')
         serializer.save()
 
         # # 쿠키에 임시 세션 ID 설정
