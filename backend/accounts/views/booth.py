@@ -219,7 +219,7 @@ class BoothOrderAPIView(APIView):
 
         data = order_serializer.data + paid_serializer.data
 
-        sorted_data = sorted(data, key=lambda x: datetime.fromisoformat(x['timestamp']), reverse=True)
+        p = sorted(data, key=lambda x: datetime.fromisoformat(x['timestamp']), reverse=True)
 
         return Response(order_serializer.data + paid_serializer.data, status=status.HTTP_200_OK)
 
@@ -377,16 +377,26 @@ class OrderPaymentAPIView(APIView):
         orders = Order.objects.filter(table_id=table_id, email=booth_id)
 
         menu_prices = []
+        valid_orders = []
         # 전부 조리완료 상태인지 확인, 메뉴 총 가격 저장
         for order in orders:
             if order.state in ["주문완료", "조리시작", "조리완료"]:
                 return Response({"message": "아직 처리가 완료되지 않은 품목이 있습니다."}, status=status.HTTP_409_CONFLICT)
-            menu = order.menu_id
-            menu_prices.append(menu.price)
+
+            print(order.state)
+            # 취소 주문은 처리 안 함
+            if order.state != "취소":
+                menu = order.menu_id
+                menu_prices.append(menu.price)
+                valid_orders.append(order)
+
+        # 취소 주문만 있을 경우 오류 처리
+        if not valid_orders:
+            return Response({"message": "결제할 내역이 없습니다."}, status=status.HTTP_409_CONFLICT)
 
         # serializer를 여러개 생성하고 문제가 있는지 확인
         serializers = []
-        for i, order in enumerate(orders):
+        for i, order in enumerate(valid_orders):
             total_price = 0
             total_price += menu_prices[i] * order.quantity
             serializer = PaymentSerializer(data=dict({'table_id': table_id,
