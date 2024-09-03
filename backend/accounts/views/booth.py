@@ -390,9 +390,9 @@ class OrderPaymentAPIView(APIView):
                 menu_prices.append(menu.price)
                 valid_orders.append(order)
 
-        # 취소 주문만 있을 경우 오류 처리
+        # 취소 주문만 있을 경우 정상 처리
         if not valid_orders:
-            return Response({"message": "결제할 내역이 없습니다."}, status=status.HTTP_409_CONFLICT)
+            return Response(status=status.HTTP_204_NO_CONTENT)
 
         # serializer를 여러개 생성하고 문제가 있는지 확인
         serializers = []
