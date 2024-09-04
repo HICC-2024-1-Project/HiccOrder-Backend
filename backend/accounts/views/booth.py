@@ -383,7 +383,6 @@ class OrderPaymentAPIView(APIView):
             if order.state in ["주문완료", "조리시작", "조리완료"]:
                 return Response({"message": "아직 처리가 완료되지 않은 품목이 있습니다."}, status=status.HTTP_409_CONFLICT)
 
-            print(order.state)
             # 취소 주문은 처리 안 함
             if order.state != "취소":
                 menu = order.menu_id
@@ -419,6 +418,7 @@ class OrderPaymentAPIView(APIView):
         # 주문 기록 전부 지우기
         orders.delete()
 
+        # 관련 토큰 삭제
         customer = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
         customer.delete()
 
