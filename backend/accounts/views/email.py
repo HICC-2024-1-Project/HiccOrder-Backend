@@ -20,7 +20,7 @@ def generate_verification_code(length=6):
 
 
 def send_verification_email(email, verification_code):
-    title = "HICC Order 이메일 인증"
+    title = "힉오더 이메일 인증"
     context = {
         'subject_message': '인증번호',
         'content_message': verification_code,
