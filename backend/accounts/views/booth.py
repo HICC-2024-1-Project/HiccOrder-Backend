@@ -18,6 +18,30 @@ from ..serializers import *     # model도 포함
 from .common import get_fields, check_authority
 
 
+class BoothS3APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booth_id):
+        if not check_authority(request, booth_id):
+            return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        instance = get_object_or_404(User, pk=booth_id)
+
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"message": "파일이 없거나, 올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        key = "%s" % (booth_id)
+        file._set_name(str(uuid.uuid4()))
+        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
+                                                       ContentType='image/jpeg')
+        image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
+        print(image_url)
+        instance.booth_image_url = image_url
+        instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
 class BoothAPIView(APIView):
     # permission_classes = [IsAuthenticated]  # 권한 확인 + 토큰 유효성 검사
 
@@ -29,15 +53,6 @@ class BoothAPIView(APIView):
         instance = get_object_or_404(User, pk=booth_id)
         if user == instance:
             data = request.data.copy()
-            file = request.FILES.get('file')
-
-            if file:
-                s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-                key = "%s" % (booth_id)
-                file._set_name(str(uuid.uuid4()))
-                s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file, ContentType='image/jpeg')
-                image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
-                data['booth_image_url'] = image_url
 
             serializer = UserSerializer(instance, data=data, partial=True)
 
