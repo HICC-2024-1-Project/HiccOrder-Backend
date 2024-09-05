@@ -36,9 +36,31 @@ class BoothS3APIView(APIView):
         s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
                                                        ContentType='image/jpeg')
         image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
-        print(image_url)
         instance.booth_image_url = image_url
         instance.save()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class BoothMenuS3APIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, booth_id, menu_id):
+        if not check_authority(request, booth_id):
+            return Response({"message": "권한이 없는 부스입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+
+        file = request.FILES.get('file')
+        if not file:
+            return Response({"message": "파일이 없거나, 올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
+        s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        key = "%s" % (menu_id)
+        file._set_name(str(uuid.uuid4()))
+        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
+                                                       ContentType='image/jpeg')
+        image_url = IMAGE_URL + "%s/%s" % (menu_id, file.name)
+        menu_instance.menu_image_url = image_url
+        menu_instance.save()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
