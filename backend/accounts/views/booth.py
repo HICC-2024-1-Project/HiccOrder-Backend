@@ -24,7 +24,10 @@ class BoothS3APIView(APIView):
     def post(self, request, booth_id):
         if not check_authority(request, booth_id):
             return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        instance = get_object_or_404(User, pk=booth_id)
+        try:
+            instance = get_object_or_404(User, pk=booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         file = request.FILES.get('file')
         if not file:
@@ -47,7 +50,11 @@ class BoothMenuS3APIView(APIView):
     def post(self, request, booth_id, menu_id):
         if not check_authority(request, booth_id):
             return Response({"message": "권한이 없는 부스입니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+
+        try:
+            menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         file = request.FILES.get('file')
         if not file:
@@ -72,7 +79,11 @@ class BoothAPIView(APIView):
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
         user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
 
-        instance = get_object_or_404(User, pk=booth_id)
+        try:
+            instance = get_object_or_404(User, pk=booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         if user == instance:
             data = request.data.copy()
 
@@ -111,7 +122,11 @@ class BoothAPIView(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        user = get_object_or_404(User, pk=booth_id)
+        try:
+            user = get_object_or_404(User, pk=booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         data = get_fields(user,
                           ['email', 'booth_name', 'bank_name', 'banker_name', 'account_number', 'booth_image_url'])
         return Response(data, status=status.HTTP_200_OK)
@@ -145,7 +160,11 @@ class BoothMenuAPIView(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        user = get_object_or_404(User, pk=booth_id)
+        try:
+            user = get_object_or_404(User, pk=booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         booth_menu_items = BoothMenu.objects.filter(email=user)
         serializer = BoothMenuSerializer(instance=booth_menu_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
@@ -155,7 +174,11 @@ class BoothMenuAPIView(APIView):
         payload = jwt.decode(access_token, SECRET_KEY, algorithms=["HS256"])  # 토큰 유효 확인
         user = User.objects.get(email=payload['email'])  # 이메일 값으로 유저 확인
 
-        instance = get_object_or_404(User, pk=booth_id)
+        try:
+            instance = get_object_or_404(User, pk=booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         if user == instance:  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
             serializer = BoothMenuSerializer(data=dict({'email': booth_id}, **request.data))
             if serializer.is_valid(raise_exception=True):
@@ -194,13 +217,21 @@ class BoothMenuDetailAPIView(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        booth_menu = get_object_or_404(BoothMenu, pk=menu_id, email=loaded_booth_id)
+        try:
+            booth_menu = get_object_or_404(BoothMenu, pk=menu_id, email=loaded_booth_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = BoothMenuSerializer(instance=booth_menu)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, booth_id, menu_id):
         if check_authority(request, booth_id):  # 토큰의 유저 정보와 유저 정보가 일치할 때만 허가
-            booth_menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+            try:
+                booth_menu_instance = get_object_or_404(BoothMenu, pk=menu_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             data = request.data.copy()
             file = request.FILES.get('file')
 
@@ -377,7 +408,11 @@ class TableOrderControlAPIView(APIView):
         authority = check_authority(request, booth_id)
 
         if authority:
-            order_instance = get_object_or_404(Order, order_id=order_id)
+            try:
+                order_instance = get_object_or_404(Order, order_id=order_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             serializer = OrderSerializer(instance=order_instance, data=request.data, partial=True)
             if serializer.is_valid(raise_exception=True):
                 serializer.save(instance=order_instance)
@@ -388,7 +423,11 @@ class TableOrderControlAPIView(APIView):
         authority = check_authority(request, booth_id)
 
         if authority:
-            order_instance = get_object_or_404(Order, order_id=order_id)
+            try:
+                order_instance = get_object_or_404(Order, order_id=order_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             order_instance.delete()
             return Response(status=status.HTTP_204_NO_CONTENT)
         return Response({"message":"권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
@@ -398,7 +437,11 @@ class TableOrderControlAPIView(APIView):
 
         if authority:
             order_state = request.data.get("state")
-            order_instance = get_object_or_404(Order, order_id=order_id)
+            try:
+                order_instance = get_object_or_404(Order, order_id=order_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             order_instance.state = order_state
             order_instance.save()
             return Response(status=status.HTTP_204_NO_CONTENT)

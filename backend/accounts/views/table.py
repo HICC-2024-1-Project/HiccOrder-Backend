@@ -37,14 +37,22 @@ class TableAPIView(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        user_instance = get_object_or_404(User, pk=loaded_booth_id)    # email로 user 정보가 있는지 확인
+        try:
+            user_instance = get_object_or_404(User, pk=loaded_booth_id)  # email로 user 정보가 있는지 확인
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         table_items = Table.objects.filter(email=booth_id)
         serializer = TableSerializer(instance=table_items, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request, booth_id):
         if check_authority(request, booth_id):
-            user_instance = get_object_or_404(User, pk=booth_id)
+            try:
+                user_instance = get_object_or_404(User, pk=booth_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             serializer = TableSerializer(data=dict({'email': booth_id}, **request.data))
             if serializer.is_valid(raise_exception=True):
                 serializer.create(dict({'email': user_instance}, **request.data))
@@ -80,13 +88,21 @@ class TableDetailAPIVIew(APIView):
         if not booth_id == loaded_booth_id:
             return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
-        table_instance = get_object_or_404(Table, pk=table_id)
+        try:
+            table_instance = get_object_or_404(Table, pk=table_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         serializer = TableSerializer(instance=table_instance)
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def patch(self, request, booth_id, table_id):
         if check_authority(request, booth_id):
-            table_instance = get_object_or_404(Table, pk=table_id)
+            try:
+                table_instance = get_object_or_404(Table, pk=table_id)
+            except Exception as e:
+                return Response(status=status.HTTP_404_NOT_FOUND)
+
             serializer = TableSerializer(instance=table_instance, data=dict({'email': booth_id}, **request.data))
             if serializer.is_valid(raise_exception=True):
                 serializer.save(instance=table_instance)
@@ -100,9 +116,13 @@ class TableDetailAPIVIew(APIView):
         if check_authority(request, booth_id):
             if Table.objects.count() <= 1 :
                 return Response({"message": "테이블은 1개 이상 있어야 합니다"}, status = status.HTTP_409_CONFLICT)
-            else :
-                table_delete_instance = get_object_or_404(Table, pk=table_id)
+            else:
+                try:
+                    table_delete_instance = get_object_or_404(Table, pk=table_id)
+                except Exception as e:
+                    return Response(status=status.HTTP_404_NOT_FOUND)
+
                 table_delete_instance.delete()
-                return Response(status = status.HTTP_204_NO_CONTENT)
+                return Response(status=status.HTTP_204_NO_CONTENT)
         else:
             return Response({"message": "권한이 없습니다. 본인 부스의 테이블만 삭제할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
