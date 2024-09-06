@@ -15,7 +15,7 @@ from rest_framework.permissions import IsAuthenticated
 from backend.settings import SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, IMAGE_URL
 
 from ..serializers import *     # model도 포함
-from .common import get_fields, check_authority
+from .common import get_fields, check_authority, resizeImage
 
 
 class BoothS3APIView(APIView):
@@ -33,10 +33,17 @@ class BoothS3APIView(APIView):
         if not file:
             return Response({"message": "파일이 없거나, 올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if file.size > 50 * 1024 * 1024:
+            return Response({"message": "파일 크기가 너무 큽니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        image = resizeImage(file)
+        if not image:
+            return Response({"message": "올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
         s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         key = "%s" % (booth_id)
         file._set_name(str(uuid.uuid4()))
-        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
+        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=image,
                                                        ContentType='image/jpeg')
         image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
         instance.booth_image_url = image_url
@@ -60,10 +67,17 @@ class BoothMenuS3APIView(APIView):
         if not file:
             return Response({"message": "파일이 없거나, 올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        if file.size > 50 * 1024 * 1024:
+            return Response({"message": "파일 크기가 너무 큽니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        image = resizeImage(file)
+        if not image:
+            return Response({"message": "올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
+
         s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
         key = "%s" % (menu_id)
         file._set_name(str(uuid.uuid4()))
-        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
+        s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=image,
                                                        ContentType='image/jpeg')
         image_url = IMAGE_URL + "%s/%s" % (menu_id, file.name)
         menu_instance.menu_image_url = image_url
