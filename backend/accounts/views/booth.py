@@ -233,17 +233,6 @@ class BoothMenuDetailAPIView(APIView):
                 return Response(status=status.HTTP_404_NOT_FOUND)
 
             data = request.data.copy()
-            file = request.FILES.get('file')
-
-            if file:
-                s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID,
-                                     aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
-                key = "%s" % (booth_id)
-                file._set_name(str(uuid.uuid4()))
-                s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=file,
-                                                               ContentType='image/jpeg')
-                image_url = IMAGE_URL + "%s/%s" % (booth_id, file.name)
-                data['menu_image_url'] = image_url
 
             serializer = BoothMenuSerializer(instance=booth_menu_instance, data=data, partial=True)
 
