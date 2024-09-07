@@ -56,31 +56,31 @@ def resizeImage(image):
         image = Image.open(image)
         image = image.convert('RGB')  # Ensure image is in RGB mode
 
-        image = ImageOps.exif_transpose(image)
-
-        original_width, original_height = image.size
-        aspect_ratio = original_width / original_height
-        sizes = [(2560, 1440), (1920, 1080), (1280, 720)]
-        if max(original_width, original_height) > 1440:
-            height = sizes[0][1]
-            width = int(aspect_ratio * height)
-        elif max(original_width, original_height) > 1080:
-            height = sizes[1][1]
-            width = int(aspect_ratio * height)
-        elif max(original_width, original_height) > 720:
-            height = sizes[2][1]
-            width = int(aspect_ratio * height)
-        else:
-            width = original_width
-            height = original_height
-
-        # Resize image
-        resized_image = image.copy()
-        resized_image.thumbnail((width, height), Image.Resampling.LANCZOS)
-
-        # Save image to a BytesIO object
+        # image = ImageOps.exif_transpose(image)
+        #
+        # original_width, original_height = image.size
+        # aspect_ratio = original_width / original_height
+        # sizes = [(2560, 1440), (1920, 1080), (1280, 720)]
+        # if max(original_width, original_height) > 1440:
+        #     height = sizes[0][1]
+        #     width = int(aspect_ratio * height)
+        # elif max(original_width, original_height) > 1080:
+        #     height = sizes[1][1]
+        #     width = int(aspect_ratio * height)
+        # elif max(original_width, original_height) > 720:
+        #     height = sizes[2][1]
+        #     width = int(aspect_ratio * height)
+        # else:
+        #     width = original_width
+        #     height = original_height
+        #
+        # # Resize image
+        # image = image.copy()
+        # image.thumbnail((width, height), Image.Resampling.LANCZOS)
+        #
+        # # Save image to a BytesIO object
         image_bytes_io = io.BytesIO()
-        resized_image.save(image_bytes_io, format='JPEG')
+        image.save(image_bytes_io, format='JPEG')
         image_bytes_io.seek(0)  # Rewind the BytesIO object
 
         return image_bytes_io
