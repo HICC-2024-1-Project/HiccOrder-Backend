@@ -40,7 +40,13 @@ class BoothS3APIView(APIView):
         if not image:
             return Response({"message": "올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 이전 이미지 삭제
         s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        if instance.booth_image_url:
+            # 기존 이미지의 S3 key 추출 (이미지 URL에서 경로만 가져옴)
+            old_image_key = instance.booth_image_url.replace(IMAGE_URL, '')
+            s3r.Bucket(AWS_STORAGE_BUCKET_NAME).Object(old_image_key).delete()
+
         key = "%s" % (booth_id)
         file._set_name(str(uuid.uuid4()))
         s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=image,
@@ -74,7 +80,13 @@ class BoothMenuS3APIView(APIView):
         if not image:
             return Response({"message": "올바르지 않은 파일입니다."}, status=status.HTTP_400_BAD_REQUEST)
 
+        # 이전 이미지 삭제
         s3r = boto3.resource('s3', aws_access_key_id=AWS_ACCESS_KEY_ID, aws_secret_access_key=AWS_SECRET_ACCESS_KEY)
+        if menu_instance.menu_image_url:
+            # 기존 이미지의 S3 key 추출 (이미지 URL에서 경로만 가져옴)
+            old_image_key = menu_instance.menu_image_url.replace(IMAGE_URL, '')
+            s3r.Bucket(AWS_STORAGE_BUCKET_NAME).Object(old_image_key).delete()
+
         key = "%s" % (menu_id)
         file._set_name(str(uuid.uuid4()))
         s3r.Bucket(AWS_STORAGE_BUCKET_NAME).put_object(Key=key + '/%s' % (file.name), Body=image,
