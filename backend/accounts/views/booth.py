@@ -4,18 +4,84 @@ import uuid
 from datetime import datetime
 import time
 
-from django.shortcuts import get_object_or_404
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.utils import timezone
 
-from rest_framework.views import APIView
 from rest_framework import status
+from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 
 from backend.settings import SECRET_KEY, AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_STORAGE_BUCKET_NAME, IMAGE_URL
 
+
 from ..serializers import *     # model도 포함
 from .common import get_fields, check_authority, resizeImage
+
+
+class StaffCallGetAPIView(APIView):
+    def get(self, request, booth_id):
+        if not check_authority(request, booth_id):
+            return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        call_object_list = get_list_or_404(StaffCall, booth_id=booth_id)
+        table_id = []
+        for call_object in call_object_list:
+            if StaffCallSerializer(instance=call_object).data['table_id'] not in table_id:
+                table_id.append(StaffCallSerializer(instance=call_object).data['table_id'])
+            else:
+                call_object.delete()
+        return Response(table_id, status=status.HTTP_200_OK)
+
+
+class StaffCallAPIView(APIView):
+    def post(self, request, booth_id, table_id):
+        temporary_user_id = request.COOKIES.get('temporary_user_id')
+        if not temporary_user_id:
+            return Response({"message": "인증키가 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            customer = Customer.objects.get(pk=temporary_user_id)
+        except Customer.DoesNotExist:
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        serializer = CustomerSerializer(instance=customer)
+        data = serializer.data
+        if time.time() > data['expire_time']:
+            customer.delete()
+            return Response({"message": "만료된 인증키입니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        loaded_booth_id = data['booth_id']
+
+        if not booth_id == loaded_booth_id:
+            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        loaded_table_id = data['table_id']
+        if not table_id == loaded_table_id:
+            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+
+        data = {
+            "booth_id": booth_id,
+            "table_id": table_id
+        }
+        serializer = StaffCallSerializer(data=data)
+
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        serializer.create(serializer.validated_data)
+        return Response({"message": "StaffCall updated successfully"}, status=status.HTTP_204_NO_CONTENT)
+
+    def delete(self, request, booth_id, table_id):
+        if not check_authority(request, booth_id):
+            return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+
+        try:
+            call_objects = get_list_or_404(StaffCall, booth_id=booth_id, table_id=table_id)
+        except Exception as e:
+            return Response({"message": "해당 호출을 찾을 수 없습니다."}, status=status.HTTP_404_NOT_FOUND)
+
+        for call_object in call_objects:
+            call_object.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class BoothS3APIView(APIView):

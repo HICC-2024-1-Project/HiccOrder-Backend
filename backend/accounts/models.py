@@ -186,3 +186,25 @@ class Customer(models.Model):
 
     class Meta:
         db_table = 'customer'
+
+
+class StaffCallManager(models.Manager):
+
+    def create(self, booth_id, table_id):
+
+        call = self.model(
+            booth_id=booth_id,
+            table_id=table_id
+        )
+        call.save(using=self._db)
+        return call
+
+
+class StaffCall(models.Model):
+    booth_id = models.EmailField(max_length=30, null=False, blank=False)
+    table_id = models.IntegerField(default=None, null=False)
+
+    objects = StaffCallManager()
+
+    class Meta:
+        db_table = 'staffCall'

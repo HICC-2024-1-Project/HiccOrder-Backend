@@ -1,4 +1,4 @@
-from .models import User, BoothMenu, Table, Order, Payment, Customer
+from .models import User, BoothMenu, Table, Order, Payment, Customer, StaffCall
 from rest_framework import serializers
 
 
@@ -195,5 +195,34 @@ class CustomerSerializer(serializers.ModelSerializer):
             table_id=validated_data['table_id'],
             booth_id=validated_data['booth_id'],
             expire_time=validated_data['expire_time']
+        )
+        return customer
+
+
+class StaffCallSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = StaffCall
+        fields = '__all__'
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if hasattr(self, 'initial_data') and self.initial_data:
+            incoming_fields = set(self.initial_data.keys())
+            defined_fields = set(self.fields.keys())
+            undefined_fields = incoming_fields - defined_fields
+            if undefined_fields:
+                raise serializers.ValidationError(f"Undefined fields: {', '.join(undefined_fields)}")
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        return {
+            'booth_id': data['booth_id'],
+            'table_id': data['table_id']
+        }
+
+    def create(self, validated_data):
+        customer = StaffCall.objects.create(
+            booth_id=validated_data['booth_id'],
+            table_id=validated_data['table_id']
         )
         return customer
