@@ -25,7 +25,13 @@ class StaffCallGetAPIView(APIView):
     def get(self, request, booth_id):
         if not check_authority(request, booth_id):
             return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        call_object_list = get_list_or_404(StaffCall, booth_id=booth_id)
+        try:
+            call_object_list = StaffCall.objects.get(booth_id=booth_id)
+        except StaffCall.DoesNotExist:
+            return Response([], status=status.HTTP_200_OK)
+        except Exception:
+            return Response(status=status.HTTP_404_NOT_FOUND)
+
         table_id = []
         for call_object in call_object_list:
             if StaffCallSerializer(instance=call_object).data['table_id'] not in table_id:
