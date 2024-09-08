@@ -58,7 +58,7 @@ class StaffCallAPIView(APIView):
 
         loaded_table_id = data['table_id']
         if not table_id == loaded_table_id:
-            return Response({"message": "권한이 없는 부스 입니다."}, status=status.HTTP_403_FORBIDDEN)
+            return Response({"message": "권한이 없는 테이블 입니다."}, status=status.HTTP_403_FORBIDDEN)
 
         data = {
             "booth_id": booth_id,
