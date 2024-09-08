@@ -20,6 +20,8 @@ from .common import get_fields, check_authority, resizeImage
 
 
 class StaffCallGetAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, booth_id):
         if not check_authority(request, booth_id):
             return Response({"message": "본인 부스만 변경할 수 있습니다."}, status=status.HTTP_401_UNAUTHORIZED)
