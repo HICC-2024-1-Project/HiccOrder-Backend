@@ -543,10 +543,8 @@ class OrderPaymentAPIView(APIView):
             orders = Order.objects.filter(table_id=table_id, email=booth_id)
         except Exception as e:
             return Response(status=status.HTTP_404_NOT_FOUND)
-        try:
-            calls = StaffCall.objects.get(booth_id=booth_id, table_id=table_id)
-        except User.DoesNotExist:
-            calls = None
+
+        calls = StaffCall.objects.filter(booth_id=booth_id, table_id=table_id)
 
         menu_prices = []
         valid_orders = []
