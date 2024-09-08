@@ -537,7 +537,11 @@ class OrderPaymentAPIView(APIView):
     def post(self, request, booth_id, table_id):
         if not check_authority(request, booth_id):
             return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
-        orders = Order.objects.filter(table_id=table_id, email=booth_id)
+        try:
+            orders = Order.objects.filter(table_id=table_id, email=booth_id)
+            calls = StaffCall.objects.filter(booth_id=booth_id, table_id=table_id)
+        except Exception as e:
+            return Response(status=status.HTTP_404_NOT_FOUND)
 
         menu_prices = []
         valid_orders = []
@@ -580,6 +584,10 @@ class OrderPaymentAPIView(APIView):
 
         # 주문 기록 전부 지우기
         orders.delete()
+
+        # 호출 기록 전부 지우기
+        for call in calls:
+            call.delete()
 
         # 관련 토큰 삭제
         customer = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
