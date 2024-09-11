@@ -8,3 +8,4 @@ django-cors-headers
 boto3
 gunicorn
 Pillow
+channels
