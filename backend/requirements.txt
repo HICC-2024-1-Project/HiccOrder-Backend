@@ -10,3 +10,4 @@ gunicorn
 Pillow
 channels
 channels_redis
+uvicorn[standard]
