@@ -93,7 +93,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-    # app 추가
+    'channels',  # channels 추가
 
 ]
 
@@ -132,8 +132,11 @@ ASGI_APPLICATION = 'backend.asgi.application'
 
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    }
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [('127.0.0.1', 6379)],  # Redis 서버의 주소와 포트
+        },
+    },
 }
 
 # Database
