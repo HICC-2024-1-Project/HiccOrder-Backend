@@ -78,7 +78,6 @@ CORS_ALLOW_HEADERS = (
 # Application definition
 
 INSTALLED_APPS = [
-    'daphne',
     'accounts',
     'django.contrib.admin',
     'django.contrib.auth',
