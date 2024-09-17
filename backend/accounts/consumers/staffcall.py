@@ -1,4 +1,3 @@
-from django.utils import timezone
 from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.exceptions import DenyConnection

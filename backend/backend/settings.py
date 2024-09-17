@@ -78,6 +78,7 @@ CORS_ALLOW_HEADERS = (
 # Application definition
 
 INSTALLED_APPS = [
+    'channels',  # channels 추가
     'accounts',
     'django.contrib.admin',
     'django.contrib.auth',
@@ -91,9 +92,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',
     'rest_framework_simplejwt',
     'dj_rest_auth',
-    'dj_rest_auth.registration',
-    'channels',  # channels 추가
-
+    'dj_rest_auth.registration'
 ]
 
 MIDDLEWARE = [
