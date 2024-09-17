@@ -1,8 +1,8 @@
-from rest_framework_simplejwt.tokens import AccessToken
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.exceptions import DenyConnection
 from channels.db import database_sync_to_async
 
+from rest_framework_simplejwt.tokens import AccessToken
 import json
 import time
 
