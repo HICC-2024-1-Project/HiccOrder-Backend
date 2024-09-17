@@ -167,6 +167,8 @@ class GenerateTemporaryLinkAPIView(APIView):
             table_id = request.data['table_id']
         except User.DoesNotExist:
             raise NotFound('Token not found')
+        except KeyError:
+            return Response({'error': 'request error'}, status=status.HTTP_400_BAD_REQUEST)
         expire_time = int(time.time()) + 3600  # 유효기간 60분
         token = get_random_string(20)
 

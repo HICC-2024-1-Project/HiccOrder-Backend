@@ -13,12 +13,13 @@ from ..serializers import CustomerSerializer
 
 class StaffCallConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        self.room_group_name = None
         self.booth_id = self.scope['url_route']['kwargs']['booth_id']
         self.type = self.scope['url_route']['kwargs']['type']
         if self.type == 'admin':
             # WebSocket 연결 요청에서 Authorization 헤더 가져오기
             headers = dict(self.scope['headers'])
-            token = headers.get(b'Authorization', None)
+            token = headers.get(b'authorization', None)
 
             if token:
                 try:
@@ -26,23 +27,36 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
                     token = token.decode('utf-8').replace('Bearer ', '')
                     access_token = AccessToken(token)
                     email = access_token['email']
-
                     # 비동기적으로 사용자 정보를 조회
                     user = await self.get_user_by_email(email)
-
                     if not user.is_authenticated:
-                        raise DenyConnection("Invalid token")
-                    if not self.booth_id == user.data['email']:
+                        raise DenyConnection("Invalid autorization token")
+
+                    if self.booth_id != email:
+                        print(2)
                         raise DenyConnection("Invalid token")
 
                 except Exception as e:
+                    print(e)
                     raise DenyConnection(f"Authentication failed: {str(e)}")
             else:
                 raise DenyConnection("Authorization header missing")
         else:
             self.table_id = self.scope['url_route']['kwargs']['table_id']
-            cookies = self.scope.get('cookies', {})
-            temporary_user_id = cookies.get('temporary_user_id', None)
+            cookies = self.scope.get('headers', [])
+            cookie_header = next((header for header in cookies if header[0] == b'cookie'), None)
+            cookie_value = cookie_header[1].decode('utf-8') if cookie_header else None
+
+            # 쿠키 값을 JSON으로 파싱
+            temporary_user_id = None
+            if cookie_value:
+                try:
+                    # 쿠키 값이 JSON 형식으로 가정
+                    cookie_data = json.loads(cookie_value)
+                    # temporal_user_id 추출
+                    temporary_user_id = cookie_data.get('temporary_user_id', None)
+                except json.JSONDecodeError:
+                    return DenyConnection("Bad request")
 
             if not temporary_user_id:
                 return DenyConnection("인증키가 없습니다.")
@@ -55,20 +69,21 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
 
             serializer = CustomerSerializer(instance=customer)
             data = serializer.data
+            print(data)
 
             if time.time() > data['expire_time']:
                 await self.delete_customer(temporary_user_id)
                 raise DenyConnection("만료된 인증키입니다.")
 
             loaded_booth_id = data['booth_id']
-            if not self.booth_id == loaded_booth_id:
+            if self.booth_id != loaded_booth_id:
                 raise DenyConnection("권한이 없는 부스 입니다.")
 
             loaded_table_id = data['table_id']
-            if not self.table_id == loaded_table_id:
+            if int(self.table_id) != int(loaded_table_id):
                 raise DenyConnection("권한이 없는 테이블 입니다.")
 
-        self.room_group_name = f'booth_{self.booth_id}'
+        self.room_group_name = f'booth_{self.booth_id.split("@")[0]}_{self.booth_id.split("@")[1]}'
 
         await self.channel_layer.group_add(
             self.room_group_name,
@@ -78,20 +93,23 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
         # 연결 허용
         await self.accept()
 
-        # 클라이언트 연결 시 이전 메시지 전송
-        previous_calls = await self.get_previous_calls(self.booth_id)
-        for call in previous_calls:
-            await self.send(json.dumps({
-                'table_id': call.table_id
-            }))
+        if self.type == 'admin':
+            # 클라이언트 연결 시 이전 메시지 전송
+            previous_calls = await self.get_previous_calls(self.booth_id)
+
+            for call in previous_calls:
+                await self.send(json.dumps({
+                    'table_id': call
+                }))
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(
-            self.room_group_name,
-            self.channel_name
-        )
+        if self.room_group_name:
+            await self.channel_layer.group_discard(
+                self.room_group_name,
+                self.channel_name
+            )
 
-    async def receive(self):
+    async def receive(self, text_data):
         booth_id = self.scope['url_route']['kwargs']['booth_id']
         table_id = self.scope['url_route']['kwargs']['table_id']
 
@@ -121,14 +139,17 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
         # 데이터베이스에 메시지 저장
         StaffCall.objects.create(
             booth_id=booth_id,
-            table_id=table_id,
-            timestamp=timezone.now()
+            table_id=table_id
         )
 
     @database_sync_to_async
     def get_previous_calls(self, booth_id):
+        call_list = []
+        previous_calls = StaffCall.objects.filter(booth_id=booth_id).order_by('timestamp')
+        for call in previous_calls:
+            call_list.append(call.table_id)
         # 데이터베이스에서 이전 메시지 가져오기
-        return StaffCall.objects.filter(booth_id=booth_id).order_by('timestamp')
+        return call_list
 
     @database_sync_to_async
     def get_user_by_email(self, email):

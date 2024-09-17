@@ -190,7 +190,7 @@ class Customer(models.Model):
 
 class StaffCallManager(models.Manager):
 
-    def create(self, booth_id, table_id, timestamp):
+    def create(self, booth_id, table_id):
 
         call = self.model(
             booth_id=booth_id,

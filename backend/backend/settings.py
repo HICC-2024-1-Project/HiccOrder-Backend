@@ -78,6 +78,8 @@ CORS_ALLOW_HEADERS = (
 # Application definition
 
 INSTALLED_APPS = [
+    'daphne',
+    'accounts',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -91,10 +93,8 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'dj_rest_auth',
     'dj_rest_auth.registration',
-    'channels',
-
     # app 추가
-    'accounts',
+
 ]
 
 MIDDLEWARE = [
@@ -128,7 +128,13 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'backend.wsgi.application'
+ASGI_APPLICATION = 'backend.asgi.application'
 
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
+    }
+}
 
 # Database
 # https://docs.djangoproject.com/en/4.2/ref/settings/#databases
@@ -257,12 +263,3 @@ AWS_SECRET_ACCESS_KEY = get_secret("AWS_SECRET_ACCESS_KEY")
 AWS_STORAGE_BUCKET_NAME = os.environ.get('AWS_STORAGE_BUCKET_NAME', 'hiccorder')
 AWS_S3_REGION_NAME = os.environ.get('AWS_S3_REGION_NAME', 'ap-northeast-2')
 IMAGE_URL = "https://%s.s3.%s.amazonaws.com/" % (AWS_STORAGE_BUCKET_NAME, AWS_S3_REGION_NAME)
-
-# channels setup
-ASGI_APPLICATION = 'backend.asgi.application'
-
-CHANNEL_LAYERS = {
-    'default': {
-        'BACKEND': 'channels.layers.InMemoryChannelLayer',
-    }
-}
