@@ -9,7 +9,6 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer, Toke
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework.exceptions import PermissionDenied
 from rest_framework.exceptions import NotFound
 
 from django.contrib.auth import authenticate
@@ -168,6 +167,8 @@ class GenerateTemporaryLinkAPIView(APIView):
             table_id = request.data['table_id']
         except User.DoesNotExist:
             raise NotFound('Token not found')
+        except KeyError:
+            return Response({'error': 'request error'}, status=status.HTTP_400_BAD_REQUEST)
         expire_time = int(time.time()) + 3600  # 유효기간 60분
         token = get_random_string(20)
 

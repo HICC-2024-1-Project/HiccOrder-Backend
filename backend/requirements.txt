@@ -8,3 +8,5 @@ django-cors-headers
 boto3
 gunicorn
 Pillow
+channels[daphne]
+channels_redis

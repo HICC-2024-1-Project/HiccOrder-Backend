@@ -202,7 +202,7 @@ class CustomerSerializer(serializers.ModelSerializer):
 class StaffCallSerializer(serializers.ModelSerializer):
     class Meta:
         model = StaffCall
-        fields = '__all__'
+        fields = ('booth_id', 'table_id')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -217,7 +217,8 @@ class StaffCallSerializer(serializers.ModelSerializer):
         data = super().to_representation(instance)
         return {
             'booth_id': data['booth_id'],
-            'table_id': data['table_id']
+            'table_id': data['table_id'],
+            'timestamp': data['timestamp']
         }
 
     def create(self, validated_data):
