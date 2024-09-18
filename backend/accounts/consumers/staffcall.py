@@ -96,7 +96,10 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
 
             for call in previous_calls:
                 await self.send(json.dumps({
-                    'table_id': call
+                    "event": "staffCall",
+                    "data": {
+                        "table_id": call
+                    }
                 }))
 
     async def disconnect(self, close_code):
