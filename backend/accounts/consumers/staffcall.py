@@ -108,24 +108,45 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         booth_id = self.scope['url_route']['kwargs']['booth_id']
-        table_id = self.scope['url_route']['kwargs']['table_id']
+        table_id = self.scope['url_route']['kwargs'].get('table_id', None)
+        try:
+            message = json.loads(text_data)
+            event = message.get('event', None)
+            data = message.get('data', None)
 
-        if self.type != 'admin':
-            if booth_id and table_id:
-                # 메시지를 데이터베이스에 저장
-                await self.save_call(booth_id, table_id)
+            # 사용자
+            if self.type != 'admin':
+                if booth_id and table_id:
+                    if event == 'staffCall':
+                        # 실제 연결된 url과 요청한 table_id가 안 맞는 경우 에러 처리
+                        if not table_id != data['table_id']:
+                            await self.send(text_data=json.dumps({
+                                'error': 'url table_id and request table_id is not same.'
+                            }))
 
-                # 그룹의 모든 클라이언트에게 table_id 전송
-                await self.channel_layer.group_send(
-                    self.room_group_name,
-                    {
-                        'type': 'send_table_id',
-                        'table_id': table_id
-                    }
-                )
-        else:
-            if text_data == 'delete':
-                await self.delete_call(booth_id, table_id)
+                        # 메시지를 데이터베이스에 저장
+                        await self.save_call(booth_id, table_id)
+
+                        # 그룹의 모든 클라이언트에게 table_id 전송
+                        await self.channel_layer.group_send(
+                            self.room_group_name,
+                            {
+                                'type': 'send_table_id',
+                                'table_id': table_id
+                            }
+                        )
+            else:
+                if event == 'delete':
+                    await self.delete_call(booth_id, data['table_id'])
+        except json.JSONDecodeError:
+            # JSON 형식이 잘못된 경우
+            await self.send(text_data=json.dumps({
+                'error': 'Invalid JSON format'
+            }))
+        except Exception as e:
+            await self.send(text_data=json.dumps({
+                'error': str(e)
+            }))
 
     async def send_table_id(self, event):
         if self.type == 'admin':
@@ -133,7 +154,10 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
 
             # 클라이언트로 table_id 전송
             await self.send(json.dumps({
-                'table_id': table_id
+                "event": "staffCall",
+                "data": {
+                    "table_id": table_id
+                }
             }))
 
     @database_sync_to_async
