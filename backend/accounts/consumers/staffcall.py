@@ -86,7 +86,6 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
                     return await self.close()
 
                 temporary_user_id = data.get("temporary_user_id", None)
-                print(temporary_user_id)
 
                 if not temporary_user_id:
                     return await self.close()
@@ -123,7 +122,7 @@ class StaffCallConsumer(AsyncWebsocketConsumer):
                     if booth_id and table_id:
                         if event == 'staffCall':
                             # 실제 연결된 url과 요청한 table_id가 안 맞는 경우 에러 처리
-                            if not table_id != data['table_id']:
+                            if not int(table_id) != int(data['table_id']):
                                 await self.send(text_data=json.dumps({
                                     'error': 'url table_id and request table_id is not same.'
                                 }))
