@@ -5,11 +5,36 @@ from django.shortcuts import get_object_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
+from rest_framework.permissions import IsAuthenticated
 
 from backend.settings import SECRET_KEY
 
 from .common import check_authority
 from ..serializers import *     # model도 포함
+
+
+class TableStatus(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, booth_id):
+        authority = check_authority(request, booth_id)
+
+        if not authority:
+            return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
+        customers = Customer.objects.filter(booth_id=booth_id)
+        customer_dict = {}
+        for customer in customers:
+            table_id = CustomerSerializer(customer).data['table_id']
+            expire_time = CustomerSerializer(customer).data['expire_time']
+            start_time = int(expire_time) - 18000
+            table_time = (int(time.time()) - start_time) / 60
+            if customer_dict.get(table_id):
+                if customer_dict.get(table_id) < table_time:
+                    customer_dict.update({table_id: table_time})
+            else:
+                customer_dict.update({table_id: table_time})
+
+        return Response(customer_dict, status=status.HTTP_200_OK)
 
 
 class TableAPIView(APIView):

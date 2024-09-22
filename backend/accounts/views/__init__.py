@@ -9,6 +9,7 @@ __all__ = [
     'EmailDuplication',
     'BoothAPIView',
     'BoothMenuAPIView',
+    'TableStatus',
     'TableAPIView',
     'TableDetailAPIVIew',
     'BoothOrderAPIView',

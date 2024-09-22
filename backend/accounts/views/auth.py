@@ -169,7 +169,7 @@ class GenerateTemporaryLinkAPIView(APIView):
             raise NotFound('Token not found')
         except KeyError:
             return Response({'error': 'request error'}, status=status.HTTP_400_BAD_REQUEST)
-        expire_time = int(time.time()) + 3600  # 유효기간 60분
+        expire_time = int(time.time()) + 18000  # 유효기간 300분
         token = get_random_string(20)
 
         cache.set(token, {'expire_time': expire_time, 'booth_id': user.email, 'table_id': table_id}, timeout=3600)  # 캐시에 5분 동안 저장
@@ -213,7 +213,7 @@ class TemporaryResourceAPIView(APIView):
 
         # # 쿠키에 임시 세션 ID 설정
         response = redirect(redirect_path)
-        response.set_cookie('temporary_user_id', token, max_age=6000, domain=".ho.ccc.vg")  # 쿠키 유효기간 100분
+        response.set_cookie('temporary_user_id', token, max_age=18000, domain=".ho.ccc.vg")  # 쿠키 유효기간 300분
 
         # 리소스에 접근하는 로직 추가
         return response
