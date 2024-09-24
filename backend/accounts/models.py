@@ -228,6 +228,7 @@ class Time(models.Model):
     booth_id = models.ForeignKey(User, related_name='time', on_delete=models.PROTECT)
     table_id = models.ForeignKey(Table, related_name='time', on_delete=models.PROTECT)
     using_time = models.FloatField(null=False, blank=False)
+    table_fee = models.PositiveIntegerField(default=0, null=False, blank=False)
     timestamp = models.DateTimeField(auto_now_add=True)
 
     class Meta:

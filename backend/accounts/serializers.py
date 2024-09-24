@@ -232,7 +232,7 @@ class StaffCallSerializer(serializers.ModelSerializer):
 class TimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Time
-        fields = ('booth_id', 'table_id', 'using_time')
+        fields = ('booth_id', 'table_id', 'table_fee', 'using_time')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -247,6 +247,7 @@ class TimeSerializer(serializers.ModelSerializer):
         time = Time.objects.create(
             booth_id=validated_data['booth_id'],
             table_id=validated_data['table_id'],
+            table_fee=validated_data['table_fee'],
             using_time=validated_data['using_time']
         )
         return time

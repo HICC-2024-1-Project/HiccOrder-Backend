@@ -576,6 +576,8 @@ class OrderPaymentAPIView(APIView):
                                                       'quantity': order.quantity}))
             serializers.append(serializer)
 
+        table_fee = request.data.get('table_fee', 0)
+
         customers = Customer.objects.filter(booth_id=booth_id)
         total_time = 0.0
         for customer in customers:
@@ -587,6 +589,7 @@ class OrderPaymentAPIView(APIView):
 
         time_serializer = TimeSerializer(data=dict({'booth_id': booth_id,
                                                     'table_id': table_id,
+                                                    'table_fee': table_fee,
                                                     'using_time': total_time}))
 
         if not time_serializer.is_valid(raise_exception=True):
