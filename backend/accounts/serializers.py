@@ -232,7 +232,7 @@ class StaffCallSerializer(serializers.ModelSerializer):
 class TimeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Time
-        fields = ('booth_id', 'table_id')
+        fields = ('booth_id', 'table_id', 'using_time')
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
