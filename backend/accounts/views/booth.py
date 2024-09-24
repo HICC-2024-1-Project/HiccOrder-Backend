@@ -576,14 +576,18 @@ class OrderPaymentAPIView(APIView):
                                                       'quantity': order.quantity}))
             serializers.append(serializer)
 
-        customer = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
-        expire_time = CustomerSerializer(customer).data['expire_time']
-        start_time = int(expire_time) - 18000
-        table_time = (int(time.time()) - start_time) / 60
+        customers = Customer.objects.filter(booth_id=booth_id)
+        time = 0.0
+        for customer in customers:
+            expire_time = CustomerSerializer(customer).data['expire_time']
+            start_time = int(expire_time) - 18000
+            table_time = (int(time.time()) - start_time) / 60
+            if time < table_time:
+                time = table_time
 
         time_serializer = TimeSerializer(data=dict({'booth_id': booth_id,
                                                     'table_id': table_id,
-                                                    'using_time': table_time}))
+                                                    'using_time': time}))
 
         if not time_serializer.is_valid(raise_exception=True):
             return Response({'message': "serializer.errors"}, status=status.HTTP_400_BAD_REQUEST)
