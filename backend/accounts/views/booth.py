@@ -614,7 +614,8 @@ class OrderPaymentAPIView(APIView):
             call.delete()
 
         # 관련 토큰 삭제
-        customer = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
-        customer.delete()
+        customers = Customer.objects.filter(booth_id=booth_id, table_id=table_id)
+        for customer in customers:
+            customer.delete()
 
         return Response(status=status.HTTP_204_NO_CONTENT)
