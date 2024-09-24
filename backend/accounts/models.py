@@ -209,3 +209,26 @@ class StaffCall(models.Model):
 
     class Meta:
         db_table = 'staffCall'
+
+
+class TimeManager(models.Manager):
+
+    def create(self, booth_id, table_id, using_time):
+
+        time = self.model(
+            booth_id=booth_id,
+            table_id=table_id,
+            using_time=using_time,
+        )
+        time.save(using=self._db)
+        return time
+
+
+class Time(models.Model):
+    booth_id = models.ForeignKey(User, related_name='time', on_delete=models.PROTECT)
+    table_id = models.ForeignKey(Table, related_name='time', on_delete=models.PROTECT)
+    using_time = models.FloatField(null=False, blank=False)
+    timestamp = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'time'
