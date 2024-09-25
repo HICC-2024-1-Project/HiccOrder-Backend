@@ -27,6 +27,7 @@ urlpatterns = [
     path("booth/<str:booth_id>/menu/<str:menu_id>/", BoothMenuDetailAPIView.as_view()),
     path("booth/<str:booth_id>/table/", TableAPIView.as_view()),
     path("booth/<str:booth_id>/table/status/", TableStatus.as_view()),
+    path("booth/<str:booth_id>/table/table_fee/", TableFeeAPIView.as_view()),
     path("booth/<str:booth_id>/table/<str:table_id>/", TableDetailAPIVIew.as_view()),
     path("s3/booth/<str:booth_id>/", BoothS3APIView.as_view()),
     path("s3/booth/<str:booth_id>/menu/<str:menu_id>/", BoothMenuS3APIView.as_view()),

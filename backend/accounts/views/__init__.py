@@ -11,6 +11,7 @@ __all__ = [
     'BoothMenuAPIView',
     'TableStatus',
     'TableAPIView',
+    'TableFeeAPIView',
     'TableDetailAPIVIew',
     'BoothOrderAPIView',
     'TableOrderAPIView',
