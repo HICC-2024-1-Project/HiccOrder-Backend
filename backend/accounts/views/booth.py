@@ -628,8 +628,8 @@ class TableFeeAPIView(APIView):
         if not check_authority(request, booth_id):
             return Response({"message": "권한이 없습니다."}, status=status.HTTP_401_UNAUTHORIZED)
 
-        times = Time.objects.filter(email_id=booth_id)
+        times = Time.objects.filter(booth_id=booth_id)
 
         serializer = TimeSerializer(times, many=True)
 
-        return Response (serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data, status=status.HTTP_200_OK)
